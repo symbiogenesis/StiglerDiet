@@ -19,12 +19,12 @@ public class StiglerDietProgram
     static void Initialize(Solver solver)
     {
         // Nutrient minimums.
-        (String Name, double Value)[] nutrients =
+        (string Name, double Value)[] nutrients =
             [ ("Calories (kcal)", 3.0), ("Protein (g)", 70.0),    ("Calcium (g)", 0.8),
                     ("Iron (mg)", 12.0),      ("Vitamin A (kIU)", 5.0), ("Vitamin B1 (mg)", 1.8),
                     ("Vitamin B2 (mg)", 2.7), ("Niacin (mg)", 18.0),    ("Vitamin C (mg)", 75.0) ];
 
-        (String Name, String Unit, double Price, double[] Nutrients)[] data = [
+        (string Name, string Unit, double Price, double[] Nutrients)[] data = [
             ("Wheat Flour (Enriched)", "10 lb.", 36, [44.7, 1411, 2, 365, 0, 55.4, 33.3, 441, 0]),
             ("Macaroni", "1 lb.", 14.1, [11.6, 418, 0.7, 54, 0, 3.2, 1.9, 68, 0]),
             ("Wheat Cereal (Enriched)", "28 oz.", 24.2, [11.8, 377, 14.4, 175, 0, 14.4, 8.8, 114, 0]),
