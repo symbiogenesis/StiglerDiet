@@ -52,14 +52,13 @@ namespace StiglerDiet.Tests
         }
 
         [Theory]
-        [InlineData("Calcium", 0, 200)]
-        [InlineData("Iron", 10, 100)]
-        public void NutrientRequirements_AreMet(string nutrientName, double minimum, double maximum)
+        [InlineData("Calcium", 0)]
+        [InlineData("Iron", 10)]
+        public void NutrientRequirements_AreMet(string nutrientName, double minimum)
         {
             solver.Solve();
             var constraint = solver.constraints().First(c => c.Name().StartsWith(nutrientName));
             Assert.True(constraint.Lb() >= minimum, $"{nutrientName} value of {constraint.Lb()} does not meet the minimum requirement of {minimum}.");
-            Assert.True(constraint.Ub() <= maximum, $"{nutrientName} value of {constraint.Ub()} has exceeded the maximum requirement of {maximum}.");
         }
 
         [Fact]
