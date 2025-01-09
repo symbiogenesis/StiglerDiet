@@ -136,6 +136,8 @@ public class StiglerDietProgram
         // Check that the problem has an optimal solution.
         if (resultStatus != Solver.ResultStatus.OPTIMAL)
         {
+            Console.WriteLine();
+
             Console.WriteLine("The problem does not have an optimal solution!");
             if (resultStatus == Solver.ResultStatus.FEASIBLE)
             {
@@ -147,6 +149,8 @@ public class StiglerDietProgram
                 return;
             }
         }
+
+        Console.WriteLine();
 
         // Display the amounts (in dollars) to purchase of each food.
         double[] nutrientsResult = new double[nutrients.Length];
