@@ -1,6 +1,5 @@
-﻿// The Stigler diet problem.
-using System;
-using System.Collections.Generic;
+﻿namespace StiglerDiet;
+
 using Google.OrTools.LinearSolver;
 
 public class StiglerDietProgram
