@@ -5,6 +5,8 @@ VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StiglerDiet", "StiglerDiet\StiglerDiet.csproj", "{FBA62CC8-109B-4F67-9AD2-970229489F5C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StiglerDiet.Tests", "StiglerDiet.Tests\StiglerDiet.Tests.csproj", "{AFAD096D-755A-4C93-89A0-B6EC5F6AF3AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{FBA62CC8-109B-4F67-9AD2-970229489F5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FBA62CC8-109B-4F67-9AD2-970229489F5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBA62CC8-109B-4F67-9AD2-970229489F5C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFAD096D-755A-4C93-89A0-B6EC5F6AF3AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFAD096D-755A-4C93-89A0-B6EC5F6AF3AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFAD096D-755A-4C93-89A0-B6EC5F6AF3AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFAD096D-755A-4C93-89A0-B6EC5F6AF3AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

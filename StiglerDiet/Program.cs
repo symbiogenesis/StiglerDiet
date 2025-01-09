@@ -3,9 +3,21 @@ using System;
 using System.Collections.Generic;
 using Google.OrTools.LinearSolver;
 
-public class StiglerDiet
+public class StiglerDietProgram
 {
+    public Solver Solver { get; } = Solver.CreateSolver("GLOP");
+
+    public StiglerDietProgram()
+    {
+        Initialize(Solver);
+    }
+
     static void Main()
+    {
+        Initialize(new Solver("StiglerDietSolver", Solver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING));
+    }
+
+    static void Initialize(Solver solver)
     {
         // Nutrient minimums.
         (String Name, double Value)[] nutrients =
@@ -92,13 +104,6 @@ public class StiglerDiet
             ("Molasses", "18 oz.", 13.6, new double[] { 9.0, 0, 10.3, 244, 0, 1.9, 7.5, 146, 0 }),
             ("Strawberry Preserves", "1 lb.", 20.5, new double[] { 6.4, 11, 0.4, 7, 0.2, 0.2, 0.4, 3, 0 })
         };
-
-        // Create the linear solver with the GLOP backend.
-        Solver solver = Solver.CreateSolver("GLOP");
-        if (solver is null)
-        {
-            return;
-        }
 
         List<Variable> foods = new List<Variable>();
         for (int i = 0; i < data.Length; ++i)
