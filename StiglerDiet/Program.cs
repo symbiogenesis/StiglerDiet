@@ -104,14 +104,14 @@ public class StiglerDietProgram
             ("Strawberry Preserves", "1 lb.", 20.5, [6.4, 11, 0.4, 7, 0.2, 0.2, 0.4, 3, 0])
         ];
 
-        List<Variable> foods = new List<Variable>();
+        List<Variable> foods = [];
         for (int i = 0; i < data.Length; ++i)
         {
             foods.Add(solver.MakeNumVar(0.0, double.PositiveInfinity, data[i].Name));
         }
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
 
-        List<Constraint> constraints = new List<Constraint>();
+        List<Constraint> constraints = [];
         for (int i = 0; i < nutrients.Length; ++i)
         {
             Constraint constraint =
