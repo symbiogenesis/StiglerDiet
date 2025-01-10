@@ -7,8 +7,6 @@ using StiglerDiet.Models;
 
 public class StiglerDietProgram
 {
-    public Solver Solver { get; } = Solver.CreateSolver("GLOP");
-
     // Nutrient minimums.
     public static readonly NutritionFacts RecommendedDailyAllowance = new()
     {
@@ -103,11 +101,6 @@ public class StiglerDietProgram
             new("Molasses", "18 oz.", 13.6, new(9.0, 0, 10.3, 244, 0, 1.9, 7.5, 146, 0)),
             new("Strawberry Preserves", "1 lb.", 20.5, new(6.4, 11, 0.4, 7, 0.2, 0.2, 0.4, 3, 0))
         ];
-
-    public StiglerDietProgram()
-    {
-        FindOptimalDiet(Solver, RecommendedDailyAllowance, FoodItems);
-    }
 
     static void Main()
     {
