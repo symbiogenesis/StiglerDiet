@@ -13,6 +13,9 @@ public class StiglerDietProgram
         
         var (foodsResult, nutrientsResult, resultStatus, optimalPrice) = FindOptimalDiet(solver, Constants.RecommendedDailyAllowance, Constants.FoodItems);
 
+        Console.WriteLine($"Number of variables = {solver.NumVariables()}");
+        Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
+
         switch (resultStatus)
         {
             case Solver.ResultStatus.OPTIMAL:
@@ -58,8 +61,6 @@ public class StiglerDietProgram
             foods.Add(solver.MakeNumVar(0.0, double.PositiveInfinity, foodItems[i].Name));
         }
 
-        Console.WriteLine($"Number of variables = {solver.NumVariables()}");
-
         List<Constraint> constraints = [];
 
         for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
@@ -72,8 +73,6 @@ public class StiglerDietProgram
             }
             constraints.Add(constraint);
         }
-
-        Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
 
         Objective objective = solver.Objective();
         for (int i = 0; i < foodItems.Count; ++i)
