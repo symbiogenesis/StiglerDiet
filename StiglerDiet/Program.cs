@@ -13,7 +13,7 @@ public class StiglerDietProgram
     {
         using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
         
-        var (foodResults, nutrientsResult, resultStatus) = FindOptimalDiet(solver, OriginalConstants.RecommendedDailyAllowance, OriginalConstants.FoodItems);
+        var (foodResults, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, OriginalConstants.MinimumDailyAllowance, OriginalConstants.FoodItems);
 
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
@@ -34,7 +34,7 @@ public class StiglerDietProgram
                 return;
         }
 
-        if (foodResults is null || nutrientsResult is null)
+        if (foodResults is null || nutritionFactsResult is null)
         {
             return;
         }
@@ -88,7 +88,7 @@ public class StiglerDietProgram
             return (null, null, resultStatus);
         }
 
-        NutritionFacts nutrientsResult = new();
+        NutritionFacts nutritionFactsResult = new();
 
         List<FoodResult> foodResults = [];
 
@@ -99,14 +99,14 @@ public class StiglerDietProgram
             {
                 for (int j = 0; j < NutritionFacts.Properties.Value.Length; ++j)
                 {
-                    nutrientsResult[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
+                    nutritionFactsResult[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
                 }
 
                 foodResults.Add((foodItems[i], dailyPrice));
             }
         }
 
-        return (foodResults, nutrientsResult, resultStatus);
+        return (foodResults, nutritionFactsResult, resultStatus);
     }
 
     public static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts nutrientsResult)
