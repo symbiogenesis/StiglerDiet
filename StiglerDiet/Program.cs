@@ -109,46 +109,7 @@ public class StiglerDietProgram
         return (foodResults, nutrientsResult, resultStatus);
     }
 
-    public static void DisplayDailyFoods(IEnumerable<FoodResult> foods)
-    {
-        var dailyTable = new ConsoleTable("Food", "Daily Quantity", "Daily Cost ($)")
-            .Configure(o => o.EnableCount = false);
-
-        double totalCost = 0.0;
-        foreach (var (food, dailyPrice) in foods)
-        {
-            double dailyQuantity = dailyPrice / food.Price;
-            dailyTable.AddRow(food.Name, $"{dailyQuantity:N2} ({food.Unit})", dailyPrice.ToString("N2"));
-            totalCost += dailyPrice;
-        }
-
-        dailyTable.AddRow("---", "---", "---");
-        dailyTable.AddRow("Total", null, totalCost.ToString("N2"));
-
-        dailyTable.Write();
-    }
-
-    public static void DisplayAnnualFoods(IEnumerable<FoodResult> foods)
-    {
-        var annualTable = new ConsoleTable("Food", "Annual Quantity", "Annual Cost ($)")
-            .Configure(o => o.EnableCount = false);
-
-        double totalCost = 0.0;
-        foreach (var (food, dailyPrice) in foods)
-        {
-            double annualCost = 365 * dailyPrice;
-            double annualQuantity = 365 * (dailyPrice / food.Price) * food.Quantity;
-            annualTable.AddRow(food.Name, $"{annualQuantity:N2} ({food.Unit})", annualCost.ToString("N2"));
-            totalCost += annualCost;
-        }
-
-        annualTable.AddRow("---", "---", "---");
-        annualTable.AddRow("Total", null, totalCost.ToString("N2"));
-
-        annualTable.Write();
-    }
-
-    public static void DisplayNutrients(NutritionFacts recommendedDailyAllowance, NutritionFacts nutrientsResult)
+    public static void DisplayNutritionFacts(NutritionFacts recommendedDailyAllowance, NutritionFacts nutrientsResult)
     {
         var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "% of RDA")
             .Configure(o => o.EnableCount = false);
@@ -163,6 +124,30 @@ public class StiglerDietProgram
         }
 
         nutrientsTable.Write();
+    }
+
+    public static void DisplayDailyFoods(IEnumerable<FoodResult> foods) => DisplayFoodResults(foods, "Daily", 1);
+
+    public static void DisplayAnnualFoods(IEnumerable<FoodResult> foods) => DisplayFoodResults(foods, "Annual", 365);
+
+    private static void DisplayFoodResults(IEnumerable<FoodResult> foods, string label, int multiplier)
+    {
+        var annualTable = new ConsoleTable("Food", $"{label} Quantity", $"{label} Cost ($)")
+            .Configure(o => o.EnableCount = false);
+
+        double totalCost = 0.0;
+        foreach (var (food, dailyPrice) in foods)
+        {
+            double annualCost = multiplier * dailyPrice;
+            double annualQuantity = multiplier * (dailyPrice / food.Price) * food.Quantity;
+            annualTable.AddRow(food.Name, $"{annualQuantity:N2} ({food.Unit})", annualCost.ToString("N2"));
+            totalCost += annualCost;
+        }
+
+        annualTable.AddRow("---", "---", "---");
+        annualTable.AddRow("Total", null, totalCost.ToString("N2"));
+
+        annualTable.Write();
     }
 
     private static string GetNutrientName(PropertyInfo propertyInfo)
