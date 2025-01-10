@@ -11,7 +11,7 @@ public class StiglerDietProgram
     {
         using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
         
-        var (foodsResult, nutrientsResult, resultStatus) = FindOptimalDiet(solver, Constants.RecommendedDailyAllowance, Constants.FoodItems);
+        var (foodsResult, nutrientsResult, resultStatus, optimalPrice) = FindOptimalDiet(solver, Constants.RecommendedDailyAllowance, Constants.FoodItems);
 
         switch (resultStatus)
         {
@@ -38,6 +38,8 @@ public class StiglerDietProgram
 
         LogAnnualFoods(foodsResult);
 
+        Console.WriteLine($"\nOptimal annual price: ${optimalPrice:N2}");
+
         Console.WriteLine();
 
         DisplayNutrients(Constants.RecommendedDailyAllowance, nutrientsResult);
@@ -47,7 +49,7 @@ public class StiglerDietProgram
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
-    public static (IEnumerable<(FoodItem Food, double Quantity)>?, NutritionFacts?, Solver.ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
+    public static (IEnumerable<(FoodItem Food, double Quantity)>?, NutritionFacts?, Solver.ResultStatus, double) FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> foods = [];
 
@@ -86,9 +88,9 @@ public class StiglerDietProgram
 
         var foodsResult = CalculateAnnualFoods(foods, foodItems, ref nutrientsResult);
 
-        Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
+        var optimalPrice = 365 * objective.Value();
 
-        return (foodsResult, nutrientsResult, resultStatus);
+        return (foodsResult, nutrientsResult, resultStatus, optimalPrice);
     }
 
     public static List<(FoodItem Food, double Quantity)> CalculateAnnualFoods(List<Variable> foods, List<FoodItem> foodItems, ref NutritionFacts nutrientsResult)
