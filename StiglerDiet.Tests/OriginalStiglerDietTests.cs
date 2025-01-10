@@ -58,19 +58,34 @@ namespace StiglerDiet.Tests
             Assert.Equal(expected, solver.NumConstraints());
         }
 
-        [Theory]
-        [InlineData(39.66, 365)]
-        public void OptimalAnnualPrice_IsAsExpected(double expectedPrice, double days)
+        [Fact]
+        public void OptimalAnnualPrice_IsAsExpected()
         {
             // Arrange
             using var solver = CreateSolver();
 
             // Act
             var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
-            var objectiveValue = solver.Objective().Value();
+            double? totalDailyCost = foodsResult?.Sum(item => item.DailyPrice);
 
             // Assert
-            Assert.Equal(expectedPrice, Math.Round(objectiveValue * days, 2));
+            Assert.NotNull(totalDailyCost);
+            Assert.Equal(39.66, double.Round(totalDailyCost.Value * 365, 2));
+        }
+
+        [Fact]
+        public void OptimalDailyPrice_IsAsExpected()
+        {
+            // Arrange
+            using var solver = CreateSolver();
+
+            // Act
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+            double? totalDailyCost = foodsResult?.Sum(item => item.DailyPrice);
+
+            // Assert
+            Assert.NotNull(totalDailyCost);
+            Assert.Equal(0.11, double.Round(totalDailyCost.Value, 2));
         }
 
         [Theory]
