@@ -115,7 +115,7 @@ public class StiglerDietProgram
         FindOptimalDiet(solver, RecommendedDailyAllowance, FoodItems);
     }
 
-    public static void FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
+    public static NutritionFacts? FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> foods = [];
         for (int i = 0; i < foodItems.Count; ++i)
@@ -159,7 +159,7 @@ public class StiglerDietProgram
             else
             {
                 Console.WriteLine("The solver could not solve the problem.");
-                return;
+                return null;
             }
         }
 
@@ -178,6 +178,8 @@ public class StiglerDietProgram
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
+
+        return nutrientsResult;
     }
 
     public static void DisplayAnnualFoods(List<Variable> foods, List<FoodItem> nutritionFacts, NutritionFacts nutrientsResult)
