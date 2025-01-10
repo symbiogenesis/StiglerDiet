@@ -123,5 +123,18 @@ namespace StiglerDiet.Tests
             // Assert
             Assert.True(objectiveValue > 0, "Objective value should be positive.");
         }
+
+        [Fact]
+        public void Solver_ReturnsOptimalResultStatus()
+        {
+            // Arrange
+            using var solver = CreateSolver();
+
+            // Act
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+
+            // Assert
+            Assert.Equal(Solver.ResultStatus.OPTIMAL, resultStatus);
+        }
     }
 }
