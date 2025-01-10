@@ -135,6 +135,9 @@ namespace StiglerDiet.Tests
 
             // Assert
             Assert.Equal(Solver.ResultStatus.OPTIMAL, resultStatus);
+            Assert.NotNull(nutrientsResult);
+            Assert.NotNull(foodsResult);
+            Assert.NotEmpty(foodsResult);
         }
 
         [Fact]
@@ -160,6 +163,8 @@ namespace StiglerDiet.Tests
             
             // Assert
             Assert.True(resultStatus == Solver.ResultStatus.ABNORMAL, $"Expected ABNORMAL, but got {resultStatus}.");
+            Assert.Null(foodsResult);
+            Assert.Null(nutrientsResult);
         }
     }
 }
