@@ -1,20 +1,17 @@
-﻿using Xunit;
-using System;
-using System.Collections.Generic;
-using Google.OrTools.LinearSolver;
+﻿using Google.OrTools.LinearSolver;
 using StiglerDiet.Models;
 
 namespace StiglerDiet.Tests
 {
-    public class StiglerDietTests
+    public class OriginalStiglerDietTests
     {
         private readonly NutritionFacts recommendedDailyAllowance;
         private readonly List<FoodItem> foodItems;
 
-        public StiglerDietTests()
+        public OriginalStiglerDietTests()
         {
-            recommendedDailyAllowance = Constants.RecommendedDailyAllowance;
-            foodItems = Constants.FoodItems;
+            recommendedDailyAllowance = OriginalConstants.RecommendedDailyAllowance;
+            foodItems = OriginalConstants.FoodItems;
         }
 
         [Fact]

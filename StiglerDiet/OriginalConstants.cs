@@ -2,7 +2,10 @@ namespace StiglerDiet;
 
 using StiglerDiet.Models;
 
-public static class Constants
+/// <summary>
+/// Original 1939 data for the Stigler Diet problem.
+/// </summary>
+public static class OriginalConstants
 {
     // Nutrient minimums.
     public static readonly NutritionFacts RecommendedDailyAllowance = new()

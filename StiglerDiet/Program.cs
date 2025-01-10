@@ -11,7 +11,7 @@ public class StiglerDietProgram
     {
         using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
         
-        var (foodResults, nutrientsResult, resultStatus) = FindOptimalDiet(solver, Constants.RecommendedDailyAllowance, Constants.FoodItems);
+        var (foodResults, nutrientsResult, resultStatus) = FindOptimalDiet(solver, OriginalConstants.RecommendedDailyAllowance, OriginalConstants.FoodItems);
 
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
@@ -47,7 +47,7 @@ public class StiglerDietProgram
 
         Console.WriteLine();
 
-        DisplayNutrients(Constants.RecommendedDailyAllowance, nutrientsResult);
+        DisplayNutrients(OriginalConstants.RecommendedDailyAllowance, nutrientsResult);
 
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
