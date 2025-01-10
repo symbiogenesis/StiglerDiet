@@ -4,6 +4,8 @@ using ConsoleTables;
 using Google.OrTools.LinearSolver;
 using System.Collections.Generic;
 using StiglerDiet.Models;
+using System.ComponentModel;
+using System.Reflection;
 
 public class StiglerDietProgram
 {
@@ -153,8 +155,9 @@ public class StiglerDietProgram
 
         for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
         {
-            var property = NutritionFacts.Properties.Value[i];
-            var name = property.Name;
+            var propertyInfo = NutritionFacts.Properties.Value[i];
+            var descriptionAttribute = propertyInfo.GetCustomAttribute<DescriptionAttribute>();
+            var name = descriptionAttribute?.Description ?? propertyInfo.Name;
             var amount = nutrientsResult[i].ToString("N2");
             var percentage = nutrientsResult[i] / recommendedDailyAllowance[i] * 100;
             nutrientsTable.AddRow(name, amount, $"{percentage:N2}%");

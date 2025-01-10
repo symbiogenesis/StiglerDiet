@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 
@@ -26,14 +27,31 @@ public class NutritionFacts
         VitaminC = vitaminC;
     }
 
+    [Description("Calories")]
     public double Calories { get; init; }
+
+    [Description("Protein (g)")]
     public double Protein { get; init; }
+
+    [Description("Calcium (g)")]
     public double Calcium { get; init; }
+
+    [Description("Iron (mg)")]
     public double Iron { get; init; }
+
+    [Description("Vitamin A (IU)")]
     public double VitaminA { get; init; }
+
+    [Description("Vitamin B1 (mg)")]
     public double VitaminB1 { get; init; }
+
+    [Description("Vitamin B2 (mg)")]
     public double VitaminB2 { get; init; }
+
+    [Description("Niacin (mg)")]
     public double Niacin { get; init; }
+
+    [Description("Vitamin C (mg)")]
     public double VitaminC { get; init; }
 
     internal double this[int index]
