@@ -63,6 +63,7 @@ public class StiglerDietProgram
 
         List<Constraint> constraints = [];
 
+        // Add nutrient constraints
         for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
         {
             Constraint constraint =
@@ -74,6 +75,7 @@ public class StiglerDietProgram
             constraints.Add(constraint);
         }
 
+        // Set objective function (minimize cost)
         Objective objective = solver.Objective();
         for (int i = 0; i < foodItems.Count; ++i)
         {
@@ -88,6 +90,7 @@ public class StiglerDietProgram
             return (null, null, resultStatus);
         }
 
+        // Process results
         NutritionFacts nutritionFactsResult = new();
 
         List<FoodResult> foodResults = [];
