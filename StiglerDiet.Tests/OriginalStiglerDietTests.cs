@@ -181,4 +181,20 @@ public class OriginalStiglerDietTests
         Assert.Null(foodsResult);
         Assert.Null(nutrientsResult);
     }
+
+    [Fact]
+    public void Solver_HandlesEmptyFoodItems()
+    {
+        // Arrange
+        var emptyFoodItems = new List<FoodItem>();
+        using var solver = CreateSolver();
+
+        // Act
+        var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, emptyFoodItems);
+
+        // Assert
+        Assert.Null(foodsResult);
+        Assert.Null(nutrientsResult);
+        Assert.Equal(Solver.ResultStatus.INFEASIBLE, resultStatus);
+    }
 }
