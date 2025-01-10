@@ -1,5 +1,4 @@
-namespace StiglerDiet;
-using StiglerDiet.Models;
+namespace StiglerDiet.Models;
 
 public record struct FoodResult(FoodItem Food, double DailyPrice)
 {
