@@ -1,4 +1,4 @@
-﻿namespace StiglerDiet;
+namespace StiglerDiet;
 
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
@@ -114,6 +114,7 @@ public class StiglerDietProgram
             total += dailyPrice;
         }
 
+        dailyTable.AddRow("---", "---");
         dailyTable.AddRow("Total", total.ToString("N2"));
 
         dailyTable.Write();
@@ -131,6 +132,7 @@ public class StiglerDietProgram
             total += 365 * dailyPrice;
         }
 
+        annualTable.AddRow("---", "---");
         annualTable.AddRow("Total", total.ToString("N2"));
 
         annualTable.Write();
