@@ -1,4 +1,4 @@
-﻿namespace StiglerDiet;
+namespace StiglerDiet;
 
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
@@ -21,9 +21,17 @@ public class StiglerDietProgram
     {
         // Nutrient minimums.
         (string Name, double Value)[] nutrients =
-            [ ("Calories (kcal)", 3.0), ("Protein (g)", 70.0),    ("Calcium (g)", 0.8),
-                    ("Iron (mg)", 12.0),      ("Vitamin A (kIU)", 5.0), ("Vitamin B1 (mg)", 1.8),
-                    ("Vitamin B2 (mg)", 2.7), ("Niacin (mg)", 18.0),    ("Vitamin C (mg)", 75.0) ];
+            [
+                ("Calories (kcal)", 3.0),
+                ("Protein (g)", 70.0),
+                ("Calcium (g)", 0.8),
+                ("Iron (mg)", 12.0),
+                ("Vitamin A (kIU)", 5.0),
+                ("Vitamin B1 (mg)", 1.8),
+                ("Vitamin B2 (mg)", 2.7),
+                ("Niacin (mg)", 18.0),
+                ("Vitamin C (mg)", 75.0)
+            ];
 
         (string Name, string Unit, double Price, double[] Nutrients)[] data = [
             ("Wheat Flour (Enriched)", "10 lb.", 36, [44.7, 1411, 2, 365, 0, 55.4, 33.3, 441, 0]),
