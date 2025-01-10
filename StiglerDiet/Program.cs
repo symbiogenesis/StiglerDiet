@@ -39,12 +39,18 @@ public class StiglerDietProgram
 
         Console.WriteLine();
 
+        DisplayDailyFoods(foodResults);
+
+        double optimalDailyPrice = foodResults.Sum(food => food.DailyPrice);
+
+        Console.WriteLine($"\nOptimal daily price: ${optimalDailyPrice:N2}");
+        Console.WriteLine();
+
         DisplayAnnualFoods(foodResults);
 
-        double optimalAnnualPrice = foodResults.Sum(food => food.DailyPrice) * 365;
+        double optimalAnnualPrice = optimalDailyPrice * 365;
 
         Console.WriteLine($"\nOptimal annual price: ${optimalAnnualPrice:N2}");
-
         Console.WriteLine();
 
         DisplayNutrients(OriginalConstants.RecommendedDailyAllowance, nutrientsResult);
@@ -104,6 +110,19 @@ public class StiglerDietProgram
         }
 
         return (foodResults, nutrientsResult, resultStatus);
+    }
+
+    public static void DisplayDailyFoods(IEnumerable<FoodResult> foods)
+    {
+        var annualTable = new ConsoleTable("Food", "Daily Cost ($)")
+            .Configure(o => o.EnableCount = false);
+
+        foreach (var (food, dailyPrice) in foods)
+        {
+            annualTable.AddRow(food.Name, dailyPrice.ToString("N2"));
+        }
+
+        annualTable.Write();
     }
 
     public static void DisplayAnnualFoods(IEnumerable<FoodResult> foods)
