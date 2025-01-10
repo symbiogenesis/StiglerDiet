@@ -81,6 +81,11 @@ public class StiglerDietProgram
 
         Solver.ResultStatus resultStatus = solver.Solve();
 
+        if (resultStatus is not Solver.ResultStatus.OPTIMAL and not Solver.ResultStatus.FEASIBLE)
+        {
+            return (null, null, resultStatus);
+        }
+
         NutritionFacts nutrientsResult = new();
 
         List<FoodResult> foodResults = [];
