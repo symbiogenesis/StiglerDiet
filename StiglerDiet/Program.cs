@@ -98,30 +98,31 @@ public class StiglerDietProgram
 
         for (int i = 0; i < foods.Count; ++i)
         {
-            double quantity = foods[i].SolutionValue();
-            if (quantity > 0.0)
+            double dailyPrice = foods[i].SolutionValue();
+            if (dailyPrice > 0.0)
             {
                 for (int j = 0; j < NutritionFacts.Properties.Value.Length; ++j)
                 {
-                    nutrientsResult[j] += foodItems[i].NutritionFacts[j] * quantity;
+                    nutrientsResult[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
                 }
 
-                result.Add((foodItems[i], quantity));
+                result.Add((foodItems[i], dailyPrice));
             }
         }
 
         return result;
     }
 
-    public static void LogAnnualFoods(IEnumerable<(FoodItem Food, double Quantity)> foods)
+    public static void LogAnnualFoods(IEnumerable<(FoodItem Food, double DailyPrice)> foods)
     {
         var annualTable = new ConsoleTable("Food", "Annual Cost ($)")
             .Configure(o => o.EnableCount = false);
 
-        foreach (var (food, quantity) in foods)
+        foreach (var (food, dailyPrice) in foods)
         {
-            annualTable.AddRow(food.Name, (365 * quantity).ToString("N2"));
+            annualTable.AddRow(food.Name, (365 * dailyPrice).ToString("N2"));
         }
+
         annualTable.Write();
     }
 
