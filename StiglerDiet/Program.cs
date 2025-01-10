@@ -14,7 +14,7 @@ public class StiglerDietProgram
 
     static void Main()
     {
-        Initialize(new Solver("StiglerDietSolver", Solver.OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING));
+        Initialize(new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING));
     }
 
     static void Initialize(Solver solver)
