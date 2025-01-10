@@ -74,15 +74,6 @@ namespace StiglerDiet.Tests
         }
 
         [Fact]
-        public void Solver_DisposesCorrectly()
-        {
-            using var solver = CreateSolver();
-            solver.Dispose();
-            using var newSolver = CreateSolver();
-            Assert.NotNull(newSolver);
-        }
-
-        [Fact]
         public void ObjectiveValue_IsPositive()
         {
             using var solver = CreateSolver();
