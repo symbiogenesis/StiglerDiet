@@ -1,14 +1,11 @@
+namespace StiglerDiet.Models;
+
 using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Reflection;
-
-namespace StiglerDiet.Models;
 
 public class NutritionFacts
 {
-    public static Lazy<PropertyInfo[]> Properties { get; } = new(() => typeof(NutritionFacts).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-
     public NutritionFacts()
     {
     }
@@ -16,16 +13,18 @@ public class NutritionFacts
     public NutritionFacts(double calories, double protein, double calcium, double iron, double vitaminA, double vitaminB1, double vitaminB2, double niacin, double vitaminC)
         : this()
     {
-        Calories = calories;
-        Protein = protein;
-        Calcium = calcium;
-        Iron = iron;
-        VitaminA = vitaminA;
-        VitaminB1 = vitaminB1;
-        VitaminB2 = vitaminB2;
-        Niacin = niacin;
-        VitaminC = vitaminC;
+        this.Calories = calories;
+        this.Protein = protein;
+        this.Calcium = calcium;
+        this.Iron = iron;
+        this.VitaminA = vitaminA;
+        this.VitaminB1 = vitaminB1;
+        this.VitaminB2 = vitaminB2;
+        this.Niacin = niacin;
+        this.VitaminC = vitaminC;
     }
+
+    public static Lazy<PropertyInfo[]> Properties { get; } = new(() => typeof(NutritionFacts).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
 
     [Description("Calories")]
     public double Calories { get; init; }
