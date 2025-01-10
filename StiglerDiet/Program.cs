@@ -5,12 +5,13 @@ using Google.OrTools.LinearSolver;
 using StiglerDiet.Models;
 using System.ComponentModel;
 using System.Reflection;
+using static Google.OrTools.LinearSolver.Solver;
 
 public class StiglerDietProgram
 {
     static void Main()
     {
-        using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+        using var solver = new Solver("StiglerDietSolver", OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
 
         // Load data from CSV files
         var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance("Data/MinimumDailyAllowance.csv");
@@ -21,7 +22,7 @@ public class StiglerDietProgram
         LogResults(solver, foodResults, nutritionFactsResult, minimumDailyAllowance, resultStatus);
     }
 
-    public static (IEnumerable<FoodResult>?, NutritionFacts?, Solver.ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
+    public static (IEnumerable<FoodResult>?, NutritionFacts?, ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> foods = [];
 
@@ -52,9 +53,9 @@ public class StiglerDietProgram
         }
         objective.SetMinimization();
 
-        Solver.ResultStatus resultStatus = solver.Solve();
+        ResultStatus resultStatus = solver.Solve();
 
-        if (resultStatus is not Solver.ResultStatus.OPTIMAL and not Solver.ResultStatus.FEASIBLE)
+        if (resultStatus is not ResultStatus.OPTIMAL and not ResultStatus.FEASIBLE)
         {
             return (null, null, resultStatus);
         }
@@ -81,16 +82,16 @@ public class StiglerDietProgram
         return (foodResults, nutritionFactsResult, resultStatus);
     }
 
-    public static void LogResults(Solver solver, IEnumerable<FoodResult>? foodResults, NutritionFacts? nutritionFactsResult, NutritionFacts minimumDailyAllowance, Solver.ResultStatus resultStatus)
+    public static void LogResults(Solver solver, IEnumerable<FoodResult>? foodResults, NutritionFacts? nutritionFactsResult, NutritionFacts minimumDailyAllowance, ResultStatus resultStatus)
     {
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
 
         switch (resultStatus)
         {
-            case Solver.ResultStatus.OPTIMAL:
+            case ResultStatus.OPTIMAL:
                 break;
-            case Solver.ResultStatus.FEASIBLE:
+            case ResultStatus.FEASIBLE:
                 Console.WriteLine();
                 Console.WriteLine("The problem does not have an optimal solution!");
                 Console.WriteLine("A potentially suboptimal solution was found.");
