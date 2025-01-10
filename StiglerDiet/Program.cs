@@ -9,33 +9,21 @@ public class StiglerDietProgram
 {
     public Solver Solver { get; } = Solver.CreateSolver("GLOP");
 
-    public StiglerDietProgram()
+    // Nutrient minimums.
+    public static readonly NutritionFacts RecommendedDailyAllowance = new()
     {
-        Initialize(Solver);
-    }
+        Calories = 3.0,
+        Protein = 70.0,
+        Calcium = 0.8,
+        Iron = 12.0,
+        VitaminA = 5.0,
+        VitaminB1 = 1.8,
+        VitaminB2 = 2.7,
+        Niacin = 18.0,
+        VitaminC = 75.0
+    };
 
-    static void Main()
-    {
-        Initialize(new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING));
-    }
-
-    static void Initialize(Solver solver)
-    {
-        // Nutrient minimums.
-        NutritionFacts recommendedDailyAllowance = new()
-        {
-            Calories = 3.0,
-            Protein = 70.0,
-            Calcium = 0.8,
-            Iron = 12.0,
-            VitaminA = 5.0,
-            VitaminB1 = 1.8,
-            VitaminB2 = 2.7,
-            Niacin = 18.0,
-            VitaminC = 75.0
-        };
-
-        List<FoodItem> foodItems =
+    public static readonly  List<FoodItem> FoodItems =
         [
             new("Wheat Flour (Enriched)", "10 lb.", 36, new(44.7, 1411, 2, 365, 0, 55.4, 33.3, 441, 0)),
             new("Macaroni", "1 lb.", 14.1, new(11.6, 418, 0.7, 54, 0, 3.2, 1.9, 68, 0)),
@@ -116,6 +104,19 @@ public class StiglerDietProgram
             new("Strawberry Preserves", "1 lb.", 20.5, new(6.4, 11, 0.4, 7, 0.2, 0.2, 0.4, 3, 0))
         ];
 
+    public StiglerDietProgram()
+    {
+        FindOptimalDiet(Solver, RecommendedDailyAllowance, FoodItems);
+    }
+
+    static void Main()
+    {
+        var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+        FindOptimalDiet(solver, RecommendedDailyAllowance, FoodItems);
+    }
+
+    public static void FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
+    {
         List<Variable> foods = [];
         for (int i = 0; i < foodItems.Count; ++i)
         {
