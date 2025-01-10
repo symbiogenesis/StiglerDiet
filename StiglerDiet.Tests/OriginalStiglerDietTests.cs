@@ -1,4 +1,4 @@
-using Google.OrTools.LinearSolver;
+﻿using Google.OrTools.LinearSolver;
 using StiglerDiet.Models;
 
 namespace StiglerDiet.Tests
@@ -135,6 +135,31 @@ namespace StiglerDiet.Tests
 
             // Assert
             Assert.Equal(Solver.ResultStatus.OPTIMAL, resultStatus);
+        }
+
+        [Fact]
+        public void Solver_ReturnsInfeasibleResultStatus()
+        {
+            // Arrange
+            var modifiedAllowance = new NutritionFacts
+            {
+                // Set unrealistic minimums that cannot be satisfied
+                Calcium = double.MaxValue,
+                Iron = double.MaxValue,
+                Protein = double.MaxValue,
+                VitaminA = double.MaxValue,
+                VitaminB1 = double.MaxValue,
+                VitaminB2 = double.MaxValue,
+                VitaminC = double.MaxValue,
+            };
+
+            using var solver = CreateSolver();
+            
+            // Act
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, modifiedAllowance, foodItems);
+            
+            // Assert
+            Assert.True(resultStatus == Solver.ResultStatus.ABNORMAL, $"Expected ABNORMAL, but got {resultStatus}.");
         }
     }
 }
