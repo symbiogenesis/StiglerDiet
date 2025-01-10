@@ -4,7 +4,7 @@
 
 This is a C# implementation of the Stigler diet problem, which is a famous optimization problem in linear programming. The goal is to find the most cost-effective diet that satisfies all specified nutritional requirements, given a list of foods and their nutritional content.
 
-This is a more fleshed out version of [Google's implementation](https://developers.google.com/optimization/lp/stigler_diet#c_1)
+This is a more fleshed out version of [Google's implementation](https://developers.google.com/optimization/lp/stigler_diet)
 
 The following improvements have been made:
 
