@@ -5,12 +5,12 @@ namespace StiglerDiet.Tests
 {
     public class OriginalStiglerDietTests
     {
-        private readonly NutritionFacts recommendedDailyAllowance;
+        private readonly NutritionFacts minimumDailyAllowance;
         private readonly List<FoodItem> foodItems;
 
         public OriginalStiglerDietTests()
         {
-            recommendedDailyAllowance = OriginalConstants.RecommendedDailyAllowance;
+            minimumDailyAllowance = OriginalConstants.MinimumDailyAllowance;
             foodItems = OriginalConstants.FoodItems;
         }
 
@@ -23,7 +23,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
             // Assert
             Assert.NotNull(foodsResult);
@@ -38,7 +38,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
             // Assert
             Assert.Equal(expected, solver.NumVariables());
@@ -52,7 +52,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
             // Assert
             Assert.Equal(expected, solver.NumConstraints());
@@ -66,7 +66,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
             var objectiveValue = solver.Objective().Value();
 
             // Assert
@@ -89,7 +89,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
             var constraint = solver.constraints().First(c => c.Name().StartsWith(nutrientName));
 
             // Assert
@@ -103,7 +103,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
             // Assert
             Assert.NotNull(foodsResult);
@@ -117,7 +117,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
             var objectiveValue = solver.Objective().Value();
 
             // Assert
@@ -131,7 +131,7 @@ namespace StiglerDiet.Tests
             using var solver = CreateSolver();
 
             // Act
-            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
             // Assert
             Assert.Equal(Solver.ResultStatus.OPTIMAL, resultStatus);

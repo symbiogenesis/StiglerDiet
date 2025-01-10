@@ -45,14 +45,14 @@ public class StiglerDietProgram
 
         DisplayAnnualFoods(foodResults);
 
-        DisplayNutrients(OriginalConstants.RecommendedDailyAllowance, nutrientsResult);
+        DisplayNutritionFacts(OriginalConstants.MinimumDailyAllowance, nutritionFactsResult);
 
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
-    public static (IEnumerable<FoodResult>?, NutritionFacts?, Solver.ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
+    public static (IEnumerable<FoodResult>?, NutritionFacts?, Solver.ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> foods = [];
 
@@ -66,7 +66,7 @@ public class StiglerDietProgram
         for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
         {
             Constraint constraint =
-                solver.MakeConstraint(recommendedDailyAllowance[i], double.PositiveInfinity, NutritionFacts.Properties.Value[i].Name);
+                solver.MakeConstraint(minimumDailyAllowance[i], double.PositiveInfinity, NutritionFacts.Properties.Value[i].Name);
             for (int j = 0; j < foodItems.Count; ++j)
             {
                 constraint.SetCoefficient(foods[j], foodItems[j].NutritionFacts[i]);
@@ -109,7 +109,7 @@ public class StiglerDietProgram
         return (foodResults, nutrientsResult, resultStatus);
     }
 
-    public static void DisplayNutritionFacts(NutritionFacts recommendedDailyAllowance, NutritionFacts nutrientsResult)
+    public static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts nutrientsResult)
     {
         var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "% of RDA")
             .Configure(o => o.EnableCount = false);
@@ -119,7 +119,7 @@ public class StiglerDietProgram
             var propertyInfo = NutritionFacts.Properties.Value[i];
             var name = GetNutrientName(propertyInfo);
             var amount = nutrientsResult[i].ToString("N2");
-            var percentage = nutrientsResult[i] / recommendedDailyAllowance[i] * 100;
+            var percentage = nutrientsResult[i] / minimumDailyAllowance[i] * 100;
             nutrientsTable.AddRow(name, amount, $"{percentage:N2}%");
         }
 

@@ -7,8 +7,7 @@ using StiglerDiet.Models;
 /// </summary>
 public static class OriginalConstants
 {
-    // Nutrient minimums.
-    public static readonly NutritionFacts RecommendedDailyAllowance = new()
+    public static readonly NutritionFacts MinimumDailyAllowance = new()
     {
         Calories = 3000.0,
         Protein = 70.0,
