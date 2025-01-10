@@ -111,7 +111,7 @@ public class StiglerDietProgram
 
     static void Main()
     {
-        var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+        using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
         FindOptimalDiet(solver, RecommendedDailyAllowance, FoodItems);
     }
 
