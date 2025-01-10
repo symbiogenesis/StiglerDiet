@@ -105,7 +105,21 @@ public class StiglerDietProgram
     static void Main()
     {
         using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
-        FindOptimalDiet(solver, RecommendedDailyAllowance, FoodItems);
+        
+        var (foodsResult, nutrientsResult) = FindOptimalDiet(solver, RecommendedDailyAllowance, FoodItems);
+
+        if (foodsResult is null || nutrientsResult is null)
+        {
+            return;
+        }
+
+        Console.WriteLine();
+
+        DisplayNutrients(RecommendedDailyAllowance, nutrientsResult);
+
+        Console.WriteLine("\nAdvanced usage:");
+        Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
+        Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
     public static (IEnumerable<FoodItem>?, NutritionFacts?) FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
@@ -163,14 +177,6 @@ public class StiglerDietProgram
         var foodsResult = DisplayAnnualFoods(foods, foodItems, ref nutrientsResult);
 
         Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
-
-        Console.WriteLine();
-
-        DisplayNutrients(recommendedDailyAllowance, nutrientsResult);
-
-        Console.WriteLine("\nAdvanced usage:");
-        Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
-        Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
 
         return (foodsResult, nutrientsResult);
     }
