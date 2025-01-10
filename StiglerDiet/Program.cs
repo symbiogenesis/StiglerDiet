@@ -18,41 +18,7 @@ public class StiglerDietProgram
         
         var (foodResults, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
-        Console.WriteLine($"Number of variables = {solver.NumVariables()}");
-        Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
-
-        switch (resultStatus)
-        {
-            case Solver.ResultStatus.OPTIMAL:
-                break;
-            case Solver.ResultStatus.FEASIBLE:
-                Console.WriteLine();
-                Console.WriteLine("The problem does not have an optimal solution!");
-                Console.WriteLine("A potentially suboptimal solution was found.");
-                break;
-            default:
-                Console.WriteLine();
-                Console.WriteLine("The problem does not have an optimal solution!");
-                Console.WriteLine("The solver could not solve the problem.");
-                return;
-        }
-
-        if (foodResults is null || nutritionFactsResult is null)
-        {
-            return;
-        }
-
-        Console.WriteLine();
-
-        DisplayDailyFoods(foodResults);
-
-        DisplayAnnualFoods(foodResults);
-
-        DisplayNutritionFacts(minimumDailyAllowance, nutritionFactsResult);
-
-        Console.WriteLine("\nAdvanced usage:");
-        Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
-        Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
+        LogResults(solver, foodResults, nutritionFactsResult, minimumDailyAllowance, resultStatus);
     }
 
     public static (IEnumerable<FoodResult>?, NutritionFacts?, Solver.ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
@@ -113,6 +79,45 @@ public class StiglerDietProgram
         }
 
         return (foodResults, nutritionFactsResult, resultStatus);
+    }
+
+    public static void LogResults(Solver solver, IEnumerable<FoodResult>? foodResults, NutritionFacts? nutritionFactsResult, NutritionFacts minimumDailyAllowance, Solver.ResultStatus resultStatus)
+    {
+        Console.WriteLine($"Number of variables = {solver.NumVariables()}");
+        Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
+
+        switch (resultStatus)
+        {
+            case Solver.ResultStatus.OPTIMAL:
+                break;
+            case Solver.ResultStatus.FEASIBLE:
+                Console.WriteLine();
+                Console.WriteLine("The problem does not have an optimal solution!");
+                Console.WriteLine("A potentially suboptimal solution was found.");
+                break;
+            default:
+                Console.WriteLine();
+                Console.WriteLine("The problem does not have an optimal solution!");
+                Console.WriteLine("The solver could not solve the problem.");
+                return;
+        }
+
+        if (foodResults is null || nutritionFactsResult is null)
+        {
+            return;
+        }
+
+        Console.WriteLine();
+
+        DisplayDailyFoods(foodResults);
+
+        DisplayAnnualFoods(foodResults);
+
+        DisplayNutritionFacts(minimumDailyAllowance, nutritionFactsResult);
+
+        Console.WriteLine("\nAdvanced usage:");
+        Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
+        Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
     public static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts nutrientsResult)
