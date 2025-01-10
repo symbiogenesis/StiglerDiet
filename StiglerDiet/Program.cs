@@ -2,6 +2,8 @@
 
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
+using System.Collections.Generic;
+using StiglerDiet.Models;
 
 public class StiglerDietProgram
 {
@@ -20,18 +22,18 @@ public class StiglerDietProgram
     static void Initialize(Solver solver)
     {
         // Nutrient minimums.
-        (string Name, double Value)[] recommendedDailyAllowance =
-            [
-                ("Calories (kcal)", 3.0),
-                ("Protein (g)", 70.0),
-                ("Calcium (g)", 0.8),
-                ("Iron (mg)", 12.0),
-                ("Vitamin A (kIU)", 5.0),
-                ("Vitamin B1 (mg)", 1.8),
-                ("Vitamin B2 (mg)", 2.7),
-                ("Niacin (mg)", 18.0),
-                ("Vitamin C (mg)", 75.0)
-            ];
+        List<Nutrient> recommendedDailyAllowance =
+        [
+            new Nutrient("Calories (kcal)", 3.0),
+            new Nutrient("Protein (g)", 70.0),
+            new Nutrient("Calcium (g)", 0.8),
+            new Nutrient("Iron (mg)", 12.0),
+            new Nutrient("Vitamin A (kIU)", 5.0),
+            new Nutrient("Vitamin B1 (mg)", 1.8),
+            new Nutrient("Vitamin B2 (mg)", 2.7),
+            new Nutrient("Niacin (mg)", 18.0),
+            new Nutrient("Vitamin C (mg)", 75.0)
+        ];
 
         (string Name, string Unit, double Price, double[] Nutrients)[] data = [
             ("Wheat Flour (Enriched)", "10 lb.", 36, [44.7, 1411, 2, 365, 0, 55.4, 33.3, 441, 0]),
@@ -121,7 +123,7 @@ public class StiglerDietProgram
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
 
         List<Constraint> constraints = [];
-        for (int i = 0; i < recommendedDailyAllowance.Length; ++i)
+        for (int i = 0; i < recommendedDailyAllowance.Count; ++i)
         {
             Constraint constraint =
                 solver.MakeConstraint(recommendedDailyAllowance[i].Value, double.PositiveInfinity, recommendedDailyAllowance[i].Name);
@@ -162,7 +164,7 @@ public class StiglerDietProgram
         Console.WriteLine();
 
         // Display the amounts (in dollars) to purchase of each food.
-        double[] nutrientsResult = new double[recommendedDailyAllowance.Length];
+        double[] nutrientsResult = new double[recommendedDailyAllowance.Count];
         DisplayAnnualFoods(foods, data, nutrientsResult);
 
         Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
@@ -191,10 +193,10 @@ public class StiglerDietProgram
         annualTable.Write();
     }
 
-    public static void DisplayNutrients((string Name, double Value)[] nutrients, double[] nutrientsResult)
+    public static void DisplayNutrients(List<Nutrient> nutrients, double[] nutrientsResult)
     {
         var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "Minimum Required");
-        for (int i = 0; i < nutrients.Length; ++i)
+        for (int i = 0; i < nutrients.Count; ++i)
         {
             nutrientsTable.AddRow(nutrients[i].Name, nutrientsResult[i].ToString("N2"), nutrients[i].Value);
         }
