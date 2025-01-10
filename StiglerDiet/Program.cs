@@ -109,36 +109,39 @@ public class StiglerDietProgram
 
     public static void DisplayDailyFoods(IEnumerable<FoodResult> foods)
     {
-        var dailyTable = new ConsoleTable("Food", "Daily Cost ($)")
+        var dailyTable = new ConsoleTable("Food", "Daily Quantity", "Daily Cost ($)")
             .Configure(o => o.EnableCount = false);
 
         double total = 0.0;
         foreach (var (food, dailyPrice) in foods)
         {
-            dailyTable.AddRow(food.Name, dailyPrice.ToString("N2"));
+            double dailyQuantity = dailyPrice / food.Price;
+            dailyTable.AddRow(food.Name, $"{dailyQuantity:N2} ({food.Unit})", dailyPrice.ToString("N2"));
             total += dailyPrice;
         }
 
-        dailyTable.AddRow("---", "---");
-        dailyTable.AddRow("Total", total.ToString("N2"));
+        dailyTable.AddRow("---", "---", "---");
+        dailyTable.AddRow("Total", null, total.ToString("N2"));
 
         dailyTable.Write();
     }
 
     public static void DisplayAnnualFoods(IEnumerable<FoodResult> foods)
     {
-        var annualTable = new ConsoleTable("Food", "Annual Cost ($)")
+        var annualTable = new ConsoleTable("Food", "Annual Quantity", "Annual Cost ($)")
             .Configure(o => o.EnableCount = false);
 
-        double total = 0.0;
+        double totalCost = 0.0;
         foreach (var (food, dailyPrice) in foods)
         {
-            annualTable.AddRow(food.Name, (365 * dailyPrice).ToString("N2"));
-            total += 365 * dailyPrice;
+            double annualCost = 365 * dailyPrice;
+            double annualQuantity = 365 * (dailyPrice / food.Price) * food.Quantity;
+            annualTable.AddRow(food.Name, $"{annualQuantity:N2} ({food.Unit})", annualCost.ToString("N2"));
+            totalCost += annualCost;
         }
 
-        annualTable.AddRow("---", "---");
-        annualTable.AddRow("Total", total.ToString("N2"));
+        annualTable.AddRow("---", "---", "---");
+        annualTable.AddRow("Total", null, totalCost.ToString("N2"));
 
         annualTable.Write();
     }
