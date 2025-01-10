@@ -1,8 +1,8 @@
 namespace StiglerDiet;
 
+using System.Globalization;
 using CsvHelper;
 using StiglerDiet.Models;
-using System.Globalization;
 
 public static class CsvParser
 {

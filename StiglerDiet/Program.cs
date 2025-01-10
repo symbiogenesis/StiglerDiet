@@ -1,10 +1,10 @@
 namespace StiglerDiet;
 
+using System.ComponentModel;
+using System.Reflection;
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
 using StiglerDiet.Models;
-using System.ComponentModel;
-using System.Reflection;
 using static Google.OrTools.LinearSolver.Solver;
 
 public class StiglerDietProgram
