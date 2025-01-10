@@ -115,7 +115,7 @@ public class StiglerDietProgram
         FindOptimalDiet(solver, RecommendedDailyAllowance, FoodItems);
     }
 
-    public static NutritionFacts? FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
+    public static (IEnumerable<FoodItem>?, NutritionFacts?) FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> foods = [];
         for (int i = 0; i < foodItems.Count; ++i)
@@ -159,7 +159,7 @@ public class StiglerDietProgram
             else
             {
                 Console.WriteLine("The solver could not solve the problem.");
-                return null;
+                return (null, null);
             }
         }
 
@@ -167,7 +167,7 @@ public class StiglerDietProgram
 
         // Display the amounts (in dollars) to purchase of each food.
         NutritionFacts nutrientsResult = new();
-        DisplayAnnualFoods(foods, foodItems, nutrientsResult);
+        var foodsResult = DisplayAnnualFoods(foods, foodItems, ref nutrientsResult);
 
         Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
 
@@ -179,24 +179,30 @@ public class StiglerDietProgram
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
 
-        return nutrientsResult;
+        return (foodsResult, nutrientsResult);
     }
 
-    public static void DisplayAnnualFoods(List<Variable> foods, List<FoodItem> nutritionFacts, NutritionFacts nutrientsResult)
+    public static List<FoodItem> DisplayAnnualFoods(List<Variable> foods, List<FoodItem> nutritionFacts, ref NutritionFacts nutrientsResult)
     {
         var annualTable = new ConsoleTable("Food", "Annual Cost ($)");
+        var result = new List<FoodItem>();
+
         for (int i = 0; i < foods.Count; ++i)
         {
             if (foods[i].SolutionValue() > 0.0)
             {
                 annualTable.AddRow(nutritionFacts[i].Name, (365 * foods[i].SolutionValue()).ToString("N2"));
+
                 for (int j = 0; j < NutritionFacts.Properties.Value.Length; ++j)
                 {
                     nutrientsResult[j] += nutritionFacts[i].NutritionFacts[j] * foods[i].SolutionValue();
                 }
+
+                result.Add(nutritionFacts[i]);
             }
         }
         annualTable.Write();
+        return result;
     }
 
     public static void DisplayNutrients(NutritionFacts recommendedDailyAllowance, NutritionFacts nutrientsResult)
