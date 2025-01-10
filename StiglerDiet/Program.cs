@@ -115,7 +115,8 @@ public class StiglerDietProgram
 
     public static void LogAnnualFoods(IEnumerable<(FoodItem Food, double Quantity)> foods)
     {
-        var annualTable = new ConsoleTable("Food", "Annual Cost ($)");
+        var annualTable = new ConsoleTable("Food", "Annual Cost ($)")
+            .Configure(o => o.EnableCount = false);
 
         foreach (var (food, quantity) in foods)
         {
@@ -126,7 +127,8 @@ public class StiglerDietProgram
 
     public static void DisplayNutrients(NutritionFacts recommendedDailyAllowance, NutritionFacts nutrientsResult)
     {
-        var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "Minimum Required");
+        var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "Minimum Required")
+            .Configure(o => o.EnableCount = false);
 
         for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
         {
