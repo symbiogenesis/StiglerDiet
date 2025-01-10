@@ -1,37 +1,37 @@
 ﻿using Xunit;
 using System;
+using System.Collections.Generic;
 using Google.OrTools.LinearSolver;
+using StiglerDiet.Models;
 
 namespace StiglerDiet.Tests
 {
-    public class StiglerDietTests : IDisposable
+    public class StiglerDietTests
     {
-        private Solver solver;
-        private StiglerDietProgram diet;
+        private readonly NutritionFacts recommendedDailyAllowance;
+        private readonly List<FoodItem> foodItems;
 
         public StiglerDietTests()
         {
-            diet = new StiglerDietProgram();
-            solver = diet.Solver;
-        }
-
-        public void Dispose()
-        {
-            solver.Dispose();
-            // Cleanup if necessary
+            recommendedDailyAllowance = StiglerDietProgram.RecommendedDailyAllowance;
+            foodItems = StiglerDietProgram.FoodItems;
         }
 
         [Fact]
         public void Solver_ReturnsOptimalSolution()
         {
-            var resultStatus = solver.Solve();
-            Assert.Equal(Solver.ResultStatus.OPTIMAL, resultStatus);
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            var (foodsResult, nutrientsResult) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            Assert.NotNull(foodsResult);
+            Assert.NotNull(nutrientsResult);
         }
 
         [Theory]
         [InlineData(77)]
         public void NumberOfVariables_IsCorrect(int expected)
         {
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             Assert.Equal(expected, solver.NumVariables());
         }
 
@@ -39,6 +39,8 @@ namespace StiglerDiet.Tests
         [InlineData(9)]
         public void NumberOfConstraints_IsCorrect(int expected)
         {
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             Assert.Equal(expected, solver.NumConstraints());
         }
 
@@ -46,7 +48,8 @@ namespace StiglerDiet.Tests
         [InlineData(39.66, 365)]
         public void OptimalAnnualPrice_IsAsExpected(double expectedPrice, double days)
         {
-            solver.Solve();
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            var (foodsResult, nutrientsResult) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             var objectiveValue = solver.Objective().Value();
             Assert.Equal(expectedPrice, Math.Round(objectiveValue * days, 2));
         }
@@ -56,7 +59,8 @@ namespace StiglerDiet.Tests
         [InlineData("Iron", 10)]
         public void NutrientRequirements_AreMet(string nutrientName, double minimum)
         {
-            solver.Solve();
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             var constraint = solver.constraints().First(c => c.Name().StartsWith(nutrientName));
             Assert.True(constraint.Lb() >= minimum, $"{nutrientName} value of {constraint.Lb()} does not meet the minimum requirement of {minimum}.");
         }
@@ -64,22 +68,17 @@ namespace StiglerDiet.Tests
         [Fact]
         public void Diet_InitializesCorrectly()
         {
-            Assert.NotNull(diet);
-            // Add more initialization checks if necessary
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            var (foodsResult, nutrientsResult) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            Assert.NotNull(foodsResult);
+            Assert.NotNull(nutrientsResult);
         }
 
         [Fact]
         public void Solver_DisposesCorrectly()
         {
-            // Arrange
-            var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
-            
-            // Act
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
             solver.Dispose();
-            
-            // Assert
-            // Instead of accessing solver properties after disposal,
-            // verify that creating new solver instances still works
             using var newSolver = new Solver("test2", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
             Assert.NotNull(newSolver);
         }
@@ -87,7 +86,8 @@ namespace StiglerDiet.Tests
         [Fact]
         public void ObjectiveValue_IsPositive()
         {
-            solver.Solve();
+            using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             var objectiveValue = solver.Objective().Value();
             Assert.True(objectiveValue > 0, "Objective value should be positive.");
         }
