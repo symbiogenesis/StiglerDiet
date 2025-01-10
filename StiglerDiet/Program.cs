@@ -39,7 +39,7 @@ public class StiglerDietProgram
 
         Console.WriteLine();
 
-        LogAnnualFoods(foodResults);
+        DisplayAnnualFoods(foodResults);
 
         double optimalAnnualPrice = foodResults.Sum(food => food.DailyPrice) * 365;
 
@@ -106,7 +106,7 @@ public class StiglerDietProgram
         return (foodResults, nutrientsResult, resultStatus);
     }
 
-    public static void LogAnnualFoods(IEnumerable<FoodResult> foods)
+    public static void DisplayAnnualFoods(IEnumerable<FoodResult> foods)
     {
         var annualTable = new ConsoleTable("Food", "Annual Cost ($)")
             .Configure(o => o.EnableCount = false);
