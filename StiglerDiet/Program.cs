@@ -1,4 +1,4 @@
-namespace StiglerDiet;
+﻿namespace StiglerDiet;
 
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
@@ -163,33 +163,41 @@ public class StiglerDietProgram
 
         // Display the amounts (in dollars) to purchase of each food.
         double[] nutrientsResult = new double[nutrients.Length];
-        Console.WriteLine("\nAnnual Foods:");
+        DisplayAnnualFoods(foods, data, nutrientsResult);
+
+        Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
+
+        DisplayNutrients(nutrients, nutrientsResult);
+
+        Console.WriteLine("\nAdvanced usage:");
+        Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
+        Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
+    }
+
+    public static void DisplayAnnualFoods(List<Variable> foods, (string Name, string Unit, double Price, double[] Nutrients)[] data, double[] nutrientsResult)
+    {
         var annualTable = new ConsoleTable("Food", "Annual Cost ($)");
         for (int i = 0; i < foods.Count; ++i)
         {
             if (foods[i].SolutionValue() > 0.0)
             {
                 annualTable.AddRow(data[i].Name, (365 * foods[i].SolutionValue()).ToString("N2"));
-                for (int j = 0; j < nutrients.Length; ++j)
+                for (int j = 0; j < nutrientsResult.Length; ++j)
                 {
                     nutrientsResult[j] += data[i].Nutrients[j] * foods[i].SolutionValue();
                 }
             }
         }
         annualTable.Write();
+    }
 
-        Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
-
-        Console.WriteLine("\nNutrients per day:");
+    public static void DisplayNutrients((string Name, double Value)[] nutrients, double[] nutrientsResult)
+    {
         var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "Minimum Required");
         for (int i = 0; i < nutrients.Length; ++i)
         {
             nutrientsTable.AddRow(nutrients[i].Name, nutrientsResult[i].ToString("N2"), nutrients[i].Value);
         }
         nutrientsTable.Write();
-
-        Console.WriteLine("\nAdvanced usage:");
-        Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
-        Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 }
