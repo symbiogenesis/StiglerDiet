@@ -13,15 +13,15 @@ namespace StiglerDiet.Tests
 
         public StiglerDietTests()
         {
-            recommendedDailyAllowance = StiglerDietProgram.RecommendedDailyAllowance;
-            foodItems = StiglerDietProgram.FoodItems;
+            recommendedDailyAllowance = Constants.RecommendedDailyAllowance;
+            foodItems = Constants.FoodItems;
         }
 
         [Fact]
         public void Solver_ReturnsOptimalSolution()
         {
             using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
-            var (foodsResult, nutrientsResult) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             Assert.NotNull(foodsResult);
             Assert.NotNull(nutrientsResult);
         }
@@ -49,7 +49,7 @@ namespace StiglerDiet.Tests
         public void OptimalAnnualPrice_IsAsExpected(double expectedPrice, double days)
         {
             using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
-            var (foodsResult, nutrientsResult) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             var objectiveValue = solver.Objective().Value();
             Assert.Equal(expectedPrice, Math.Round(objectiveValue * days, 2));
         }
@@ -69,7 +69,7 @@ namespace StiglerDiet.Tests
         public void Diet_InitializesCorrectly()
         {
             using var solver = new Solver("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
-            var (foodsResult, nutrientsResult) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
+            var (foodsResult, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, recommendedDailyAllowance, foodItems);
             Assert.NotNull(foodsResult);
             Assert.NotNull(nutrientsResult);
         }
