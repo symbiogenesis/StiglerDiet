@@ -1,4 +1,4 @@
-﻿namespace StiglerDiet;
+namespace StiglerDiet;
 
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
@@ -41,17 +41,7 @@ public class StiglerDietProgram
 
         DisplayDailyFoods(foodResults);
 
-        double optimalDailyPrice = foodResults.Sum(food => food.DailyPrice);
-
-        Console.WriteLine($"\nOptimal daily price: ${optimalDailyPrice:N2}");
-        Console.WriteLine();
-
         DisplayAnnualFoods(foodResults);
-
-        double optimalAnnualPrice = optimalDailyPrice * 365;
-
-        Console.WriteLine($"\nOptimal annual price: ${optimalAnnualPrice:N2}");
-        Console.WriteLine();
 
         DisplayNutrients(OriginalConstants.RecommendedDailyAllowance, nutrientsResult);
 
@@ -114,15 +104,19 @@ public class StiglerDietProgram
 
     public static void DisplayDailyFoods(IEnumerable<FoodResult> foods)
     {
-        var annualTable = new ConsoleTable("Food", "Daily Cost ($)")
+        var dailyTable = new ConsoleTable("Food", "Daily Cost ($)")
             .Configure(o => o.EnableCount = false);
 
+        double total = 0.0;
         foreach (var (food, dailyPrice) in foods)
         {
-            annualTable.AddRow(food.Name, dailyPrice.ToString("N2"));
+            dailyTable.AddRow(food.Name, dailyPrice.ToString("N2"));
+            total += dailyPrice;
         }
 
-        annualTable.Write();
+        dailyTable.AddRow("Total", total.ToString("N2"));
+
+        dailyTable.Write();
     }
 
     public static void DisplayAnnualFoods(IEnumerable<FoodResult> foods)
@@ -130,10 +124,14 @@ public class StiglerDietProgram
         var annualTable = new ConsoleTable("Food", "Annual Cost ($)")
             .Configure(o => o.EnableCount = false);
 
+        double total = 0.0;
         foreach (var (food, dailyPrice) in foods)
         {
             annualTable.AddRow(food.Name, (365 * dailyPrice).ToString("N2"));
+            total += 365 * dailyPrice;
         }
+
+        annualTable.AddRow("Total", total.ToString("N2"));
 
         annualTable.Write();
     }
@@ -150,7 +148,7 @@ public class StiglerDietProgram
             var minimumRequired = property.GetValue(recommendedDailyAllowance) ?? throw new ArgumentException($"Property value is null for index: {i}");
             var amount = nutrientsResult[i].ToString("N2");
 
-            nutrientsTable.AddRow(name, amount, (double)minimumRequired);
+            nutrientsTable.AddRow(name, amount, ((double)minimumRequired).ToString("N2"));
         }
 
         nutrientsTable.Write();
