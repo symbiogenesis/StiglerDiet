@@ -2,7 +2,6 @@ namespace StiglerDiet;
 
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
-using System.Collections.Generic;
 using StiglerDiet.Models;
 using System.ComponentModel;
 using System.Reflection;
@@ -12,8 +11,12 @@ public class StiglerDietProgram
     static void Main()
     {
         using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+
+        // Load data from CSV files
+        var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance("Data/MinimumDailyAllowance.csv");
+        var foodItems = CsvParser.LoadFoodItems("Data/FoodItems.csv");
         
-        var (foodResults, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, OriginalConstants.MinimumDailyAllowance, OriginalConstants.FoodItems);
+        var (foodResults, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
@@ -45,7 +48,7 @@ public class StiglerDietProgram
 
         DisplayAnnualFoods(foodResults);
 
-        DisplayNutritionFacts(OriginalConstants.MinimumDailyAllowance, nutritionFactsResult);
+        DisplayNutritionFacts(minimumDailyAllowance, nutritionFactsResult);
 
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
