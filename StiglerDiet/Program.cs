@@ -1,4 +1,4 @@
-namespace StiglerDiet;
+﻿namespace StiglerDiet;
 
 using ConsoleTables;
 using Google.OrTools.LinearSolver;
@@ -140,17 +140,16 @@ public class StiglerDietProgram
 
     public static void DisplayNutrients(NutritionFacts recommendedDailyAllowance, NutritionFacts nutrientsResult)
     {
-        var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "RDA")
+        var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "% of RDA")
             .Configure(o => o.EnableCount = false);
 
         for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
         {
             var property = NutritionFacts.Properties.Value[i];
             var name = property.Name;
-            var rda = property.GetValue(recommendedDailyAllowance) ?? throw new ArgumentException($"Property value is null for index: {i}");
             var amount = nutrientsResult[i].ToString("N2");
-
-            nutrientsTable.AddRow(name, amount, ((double)rda).ToString("N2"));
+            var percentage = nutrientsResult[i] / recommendedDailyAllowance[i] * 100;
+            nutrientsTable.AddRow(name, amount, $"{percentage:N2}%");
         }
 
         nutrientsTable.Write();
