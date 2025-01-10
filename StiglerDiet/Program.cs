@@ -114,16 +114,16 @@ public class StiglerDietProgram
         var dailyTable = new ConsoleTable("Food", "Daily Quantity", "Daily Cost ($)")
             .Configure(o => o.EnableCount = false);
 
-        double total = 0.0;
+        double totalCost = 0.0;
         foreach (var (food, dailyPrice) in foods)
         {
             double dailyQuantity = dailyPrice / food.Price;
             dailyTable.AddRow(food.Name, $"{dailyQuantity:N2} ({food.Unit})", dailyPrice.ToString("N2"));
-            total += dailyPrice;
+            totalCost += dailyPrice;
         }
 
         dailyTable.AddRow("---", "---", "---");
-        dailyTable.AddRow("Total", null, total.ToString("N2"));
+        dailyTable.AddRow("Total", null, totalCost.ToString("N2"));
 
         dailyTable.Write();
     }
