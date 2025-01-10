@@ -10,8 +10,8 @@ namespace StiglerDiet.Tests
 
         public OriginalStiglerDietTests()
         {
-            minimumDailyAllowance = OriginalConstants.MinimumDailyAllowance;
-            foodItems = OriginalConstants.FoodItems;
+            minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
+            foodItems = CsvParser.LoadFoodItems();
         }
 
         private static Solver CreateSolver() => new("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);

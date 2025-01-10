@@ -22,4 +22,11 @@
     <ProjectReference Include="..\StiglerDiet\StiglerDiet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\StiglerDiet\Data\*.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Data\%(Filename)%(Extension)</Link>
+    </Content>
+  </ItemGroup>
+
 </Project>

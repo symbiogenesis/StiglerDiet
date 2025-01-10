@@ -14,8 +14,8 @@ public class StiglerDietProgram
         using var solver = new Solver("StiglerDietSolver", OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
 
         // Load data from CSV files
-        var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance("Data/MinimumDailyAllowance.csv");
-        var foodItems = CsvParser.LoadFoodItems("Data/FoodItems.csv");
+        var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
+        var foodItems = CsvParser.LoadFoodItems();
         
         var (foodResults, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
