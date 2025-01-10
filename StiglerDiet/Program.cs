@@ -35,7 +35,7 @@ public class StiglerDietProgram
             new Nutrient("Vitamin C (mg)", 75.0)
         ];
 
-        (string Name, string Unit, double Price, double[] Nutrients)[] data = [
+        (string Name, string Unit, double Price, double[] Nutrients)[] foodItems = [
             ("Wheat Flour (Enriched)", "10 lb.", 36, [44.7, 1411, 2, 365, 0, 55.4, 33.3, 441, 0]),
             ("Macaroni", "1 lb.", 14.1, [11.6, 418, 0.7, 54, 0, 3.2, 1.9, 68, 0]),
             ("Wheat Cereal (Enriched)", "28 oz.", 24.2, [11.8, 377, 14.4, 175, 0, 14.4, 8.8, 114, 0]),
@@ -116,9 +116,9 @@ public class StiglerDietProgram
         ];
 
         List<Variable> foods = [];
-        for (int i = 0; i < data.Length; ++i)
+        for (int i = 0; i < foodItems.Length; ++i)
         {
-            foods.Add(solver.MakeNumVar(0.0, double.PositiveInfinity, data[i].Name));
+            foods.Add(solver.MakeNumVar(0.0, double.PositiveInfinity, foodItems[i].Name));
         }
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
 
@@ -127,16 +127,16 @@ public class StiglerDietProgram
         {
             Constraint constraint =
                 solver.MakeConstraint(recommendedDailyAllowance[i].Value, double.PositiveInfinity, recommendedDailyAllowance[i].Name);
-            for (int j = 0; j < data.Length; ++j)
+            for (int j = 0; j < foodItems.Length; ++j)
             {
-                constraint.SetCoefficient(foods[j], data[j].Nutrients[i]);
+                constraint.SetCoefficient(foods[j], foodItems[j].Nutrients[i]);
             }
             constraints.Add(constraint);
         }
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
 
         Objective objective = solver.Objective();
-        for (int i = 0; i < data.Length; ++i)
+        for (int i = 0; i < foodItems.Length; ++i)
         {
             objective.SetCoefficient(foods[i], 1);
         }
@@ -165,7 +165,7 @@ public class StiglerDietProgram
 
         // Display the amounts (in dollars) to purchase of each food.
         double[] nutrientsResult = new double[recommendedDailyAllowance.Count];
-        DisplayAnnualFoods(foods, data, nutrientsResult);
+        DisplayAnnualFoods(foods, foodItems, nutrientsResult);
 
         Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
 
