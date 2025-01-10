@@ -11,7 +11,23 @@ public class StiglerDietProgram
     {
         using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
         
-        var (foodsResult, nutrientsResult) = FindOptimalDiet(solver, Constants.RecommendedDailyAllowance, Constants.FoodItems);
+        var (foodsResult, nutrientsResult, resultStatus) = FindOptimalDiet(solver, Constants.RecommendedDailyAllowance, Constants.FoodItems);
+
+        switch (resultStatus)
+        {
+            case Solver.ResultStatus.OPTIMAL:
+                break;
+            case Solver.ResultStatus.FEASIBLE:
+                Console.WriteLine();
+                Console.WriteLine("The problem does not have an optimal solution!");
+                Console.WriteLine("A potentially suboptimal solution was found.");
+                break;
+            default:
+                Console.WriteLine();
+                Console.WriteLine("The problem does not have an optimal solution!");
+                Console.WriteLine("The solver could not solve the problem.");
+                return;
+        }
 
         if (foodsResult is null || nutrientsResult is null)
         {
@@ -27,16 +43,19 @@ public class StiglerDietProgram
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
-    public static (IEnumerable<FoodItem>?, NutritionFacts?) FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
+    public static (IEnumerable<FoodItem>?, NutritionFacts?, Solver.ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts recommendedDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> foods = [];
+
         for (int i = 0; i < foodItems.Count; ++i)
         {
             foods.Add(solver.MakeNumVar(0.0, double.PositiveInfinity, foodItems[i].Name));
         }
+
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
 
         List<Constraint> constraints = [];
+
         for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
         {
             Constraint constraint =
@@ -47,6 +66,7 @@ public class StiglerDietProgram
             }
             constraints.Add(constraint);
         }
+
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
 
         Objective objective = solver.Objective();
@@ -58,32 +78,13 @@ public class StiglerDietProgram
 
         Solver.ResultStatus resultStatus = solver.Solve();
 
-        // Check that the problem has an optimal solution.
-        if (resultStatus != Solver.ResultStatus.OPTIMAL)
-        {
-            Console.WriteLine();
-
-            Console.WriteLine("The problem does not have an optimal solution!");
-            if (resultStatus == Solver.ResultStatus.FEASIBLE)
-            {
-                Console.WriteLine("A potentially suboptimal solution was found.");
-            }
-            else
-            {
-                Console.WriteLine("The solver could not solve the problem.");
-                return (null, null);
-            }
-        }
-
-        Console.WriteLine();
-
-        // Display the amounts (in dollars) to purchase of each food.
         NutritionFacts nutrientsResult = new();
+
         var foodsResult = DisplayAnnualFoods(foods, foodItems, ref nutrientsResult);
 
         Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
 
-        return (foodsResult, nutrientsResult);
+        return (foodsResult, nutrientsResult, resultStatus);
     }
 
     public static List<FoodItem> DisplayAnnualFoods(List<Variable> foods, List<FoodItem> nutritionFacts, ref NutritionFacts nutrientsResult)
