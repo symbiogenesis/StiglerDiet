@@ -1,4 +1,4 @@
-﻿using Google.OrTools.LinearSolver;
+using Google.OrTools.LinearSolver;
 using StiglerDiet.Models;
 
 namespace StiglerDiet.Tests
@@ -54,8 +54,15 @@ namespace StiglerDiet.Tests
         }
 
         [Theory]
-        [InlineData("Calcium", 0)]
-        [InlineData("Iron", 10)]
+        [InlineData("Calories", 3.0)]
+        [InlineData("Protein", 70)]
+        [InlineData("Calcium", 0.8)]
+        [InlineData("Iron", 12)]
+        [InlineData("VitaminA", 5.0)]
+        [InlineData("VitaminB1", 1.8)]
+        [InlineData("VitaminB2", 2.7)]
+        [InlineData("Niacin", 18)]
+        [InlineData("VitaminC", 75)]
         public void NutrientRequirements_AreMet(string nutrientName, double minimum)
         {
             using var solver = CreateSolver();
