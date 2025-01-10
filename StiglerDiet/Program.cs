@@ -1,5 +1,6 @@
 ﻿namespace StiglerDiet;
 
+using ConsoleTables;
 using Google.OrTools.LinearSolver;
 
 public class StiglerDietProgram
@@ -155,24 +156,29 @@ public class StiglerDietProgram
         // Display the amounts (in dollars) to purchase of each food.
         double[] nutrientsResult = new double[nutrients.Length];
         Console.WriteLine("\nAnnual Foods:");
+        var annualTable = new ConsoleTable("Food", "Annual Cost ($)");
         for (int i = 0; i < foods.Count; ++i)
         {
             if (foods[i].SolutionValue() > 0.0)
             {
-                Console.WriteLine($"{data[i].Name}: ${365 * foods[i].SolutionValue():N2}");
+                annualTable.AddRow(data[i].Name, (365 * foods[i].SolutionValue()).ToString("N2"));
                 for (int j = 0; j < nutrients.Length; ++j)
                 {
                     nutrientsResult[j] += data[i].Nutrients[j] * foods[i].SolutionValue();
                 }
             }
         }
+        annualTable.Write();
+
         Console.WriteLine($"\nOptimal annual price: ${365 * objective.Value():N2}");
 
         Console.WriteLine("\nNutrients per day:");
+        var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "Minimum Required");
         for (int i = 0; i < nutrients.Length; ++i)
         {
-            Console.WriteLine($"{nutrients[i].Name}: {nutrientsResult[i]:N2} (min {nutrients[i].Value})");
+            nutrientsTable.AddRow(nutrients[i].Name, nutrientsResult[i].ToString("N2"), nutrients[i].Value);
         }
+        nutrientsTable.Write();
 
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
