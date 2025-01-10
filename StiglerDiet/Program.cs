@@ -143,7 +143,7 @@ public class StiglerDietProgram
 
     private static void DisplayFoodResults(IEnumerable<FoodResult> foods, string label, int multiplier)
     {
-        var annualTable = new ConsoleTable("Food", $"{label} Quantity", $"{label} Cost ($)")
+        var annualTable = new ConsoleTable("Food", $"{label} Quantity", $"{label} Cost")
             .Configure(o => o.EnableCount = false);
 
         double totalCost = 0.0;
@@ -151,12 +151,12 @@ public class StiglerDietProgram
         {
             double annualCost = multiplier * dailyPrice;
             double annualQuantity = multiplier * (dailyPrice / food.Price) * food.Quantity;
-            annualTable.AddRow(food.Name, $"{annualQuantity:N2} ({food.Unit})", annualCost.ToString("N2"));
+            annualTable.AddRow(food.Name, $"{annualQuantity:N2} ({food.Unit})", annualCost.ToString("C2"));
             totalCost += annualCost;
         }
 
         annualTable.AddRow("---", "---", "---");
-        annualTable.AddRow("Total", null, totalCost.ToString("N2"));
+        annualTable.AddRow("Total", null, totalCost.ToString("C2"));
 
         annualTable.Write();
     }
