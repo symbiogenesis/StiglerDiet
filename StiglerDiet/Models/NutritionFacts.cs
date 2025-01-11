@@ -57,12 +57,7 @@ public class NutritionFacts
     {
         get
         {
-            if (index < 0 || index >= Properties.Value.Length)
-            {
-                throw new IndexOutOfRangeException("Invalid index");
-            }
-
-            var property = Properties.Value[index];
+            var property = GetPropertyInfo(index);
 
             var value = property.GetValue(this) ?? throw new ArgumentException($"Property value is null for index: {index}");
 
@@ -70,12 +65,7 @@ public class NutritionFacts
         }
         set
         {
-            if (index < 0 || index >= Properties.Value.Length)
-            {
-                throw new IndexOutOfRangeException("Invalid index");
-            }
-
-            var property = Properties.Value[index];
+            var property = GetPropertyInfo(index);
 
             if (property.PropertyType != typeof(double))
             {
@@ -84,5 +74,15 @@ public class NutritionFacts
 
             property.SetValue(this, value);
         }
+    }
+    
+    private static PropertyInfo GetPropertyInfo(int index)
+    {
+        if (index < 0 || index >= Properties.Value.Length)
+        {
+            throw new IndexOutOfRangeException($"Invalid index: {index}");
+        }
+
+        return Properties.Value[index];
     }
 }
