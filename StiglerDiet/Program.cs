@@ -34,10 +34,10 @@ public class StiglerDietProgram
         List<Constraint> constraints = [];
 
         // Add nutrient constraints
-        for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
+        for (int i = 0; i < NutritionFacts.Properties.Length; ++i)
         {
             Constraint constraint =
-                solver.MakeConstraint(minimumDailyAllowance[i], double.PositiveInfinity, NutritionFacts.Properties.Value[i].Name);
+                solver.MakeConstraint(minimumDailyAllowance[i], double.PositiveInfinity, NutritionFacts.Properties[i].Name);
             for (int j = 0; j < foodItems.Count; ++j)
             {
                 constraint.SetCoefficient(foods[j], foodItems[j].NutritionFacts[i]);
@@ -70,7 +70,7 @@ public class StiglerDietProgram
             double dailyPrice = foods[i].SolutionValue();
             if (dailyPrice > 0.0)
             {
-                for (int j = 0; j < NutritionFacts.Properties.Value.Length; ++j)
+                for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
                 {
                     nutritionFactsResult[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
                 }
@@ -126,9 +126,9 @@ public class StiglerDietProgram
         var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "% of RDA")
             .Configure(o => o.EnableCount = false);
 
-        for (int i = 0; i < NutritionFacts.Properties.Value.Length; ++i)
+        for (int i = 0; i < NutritionFacts.Properties.Length; ++i)
         {
-            var propertyInfo = NutritionFacts.Properties.Value[i];
+            var propertyInfo = NutritionFacts.Properties[i];
             var name = GetNutrientName(propertyInfo);
             var amount = nutrientsResult[i].ToString("N2");
             var percentage = nutrientsResult[i] / minimumDailyAllowance[i] * 100;

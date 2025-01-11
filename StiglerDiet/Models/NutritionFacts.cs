@@ -6,7 +6,7 @@ using System.Reflection;
 
 public class NutritionFacts
 {
-    public static Lazy<PropertyInfo[]> Properties { get; } = new(() => typeof(NutritionFacts).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+    public static PropertyInfo[] Properties { get; } = typeof(NutritionFacts).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
     [Description("Calories")]
     public double Calories { get; init; }
@@ -60,11 +60,11 @@ public class NutritionFacts
     
     private static PropertyInfo GetPropertyInfo(int index)
     {
-        if (index < 0 || index >= Properties.Value.Length)
+        if (index < 0 || index >= Properties.Length)
         {
             throw new IndexOutOfRangeException($"Invalid index: {index}");
         }
 
-        return Properties.Value[index];
+        return Properties[index];
     }
 }
