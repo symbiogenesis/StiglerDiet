@@ -6,24 +6,6 @@ using System.Reflection;
 
 public class NutritionFacts
 {
-    public NutritionFacts()
-    {
-    }
-
-    public NutritionFacts(double calories, double protein, double calcium, double iron, double vitaminA, double vitaminB1, double vitaminB2, double niacin, double vitaminC)
-        : this()
-    {
-        this.Calories = calories;
-        this.Protein = protein;
-        this.Calcium = calcium;
-        this.Iron = iron;
-        this.VitaminA = vitaminA;
-        this.VitaminB1 = vitaminB1;
-        this.VitaminB2 = vitaminB2;
-        this.Niacin = niacin;
-        this.VitaminC = vitaminC;
-    }
-
     public static Lazy<PropertyInfo[]> Properties { get; } = new(() => typeof(NutritionFacts).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly));
 
     [Description("Calories")]
