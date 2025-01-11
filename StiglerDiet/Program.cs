@@ -110,9 +110,9 @@ public class StiglerDietProgram
 
         Console.WriteLine();
 
-        DisplayDailyFoods(foodResults);
+        DisplayFoodResults(foodResults, Period.Daily);
 
-        DisplayAnnualFoods(foodResults);
+        DisplayFoodResults(foodResults, Period.Annual);
 
         DisplayNutritionFacts(minimumDailyAllowance, nutritionFactsResult);
 
@@ -121,7 +121,7 @@ public class StiglerDietProgram
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
-    public static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts nutrientsResult)
+    private static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts nutrientsResult)
     {
         var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "% of RDA")
             .Configure(o => o.EnableCount = false);
@@ -138,20 +138,16 @@ public class StiglerDietProgram
         nutrientsTable.Write();
     }
 
-    public static void DisplayDailyFoods(IEnumerable<FoodResult> foods) => DisplayFoodResults(foods, "Daily", 1);
-
-    public static void DisplayAnnualFoods(IEnumerable<FoodResult> foods) => DisplayFoodResults(foods, "Annual", 365);
-
-    private static void DisplayFoodResults(IEnumerable<FoodResult> foods, string label, int multiplier)
+    private static void DisplayFoodResults(IEnumerable<FoodResult> foods, Period period)
     {
-        var annualTable = new ConsoleTable("Food", $"{label} Quantity", $"{label} Cost")
+        var annualTable = new ConsoleTable("Food", $"{period} Quantity", $"{period} Cost")
             .Configure(o => o.EnableCount = false);
 
         double totalCost = 0.0;
         foreach (var (food, dailyPrice) in foods)
         {
-            double annualCost = multiplier * dailyPrice;
-            double annualQuantity = multiplier * (dailyPrice / food.Price) * food.Quantity;
+            double annualCost = (int)period * dailyPrice;
+            double annualQuantity = (int)period * (dailyPrice / food.Price) * food.Quantity;
             annualTable.AddRow(food.Name, $"{annualQuantity:N2} ({food.Unit})", annualCost.ToString("C2"));
             totalCost += annualCost;
         }
