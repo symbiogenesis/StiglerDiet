@@ -35,8 +35,10 @@ public class StiglerDietProgram
         // Add nutrient constraints
         for (int i = 0; i < NutritionFacts.Properties.Length; ++i)
         {
-            Constraint constraint =
-                solver.MakeConstraint(minimumDailyAllowance[i], double.PositiveInfinity, NutritionFacts.Properties[i].Name);
+            double lowerBound = minimumDailyAllowance[i];
+
+            var constraint = solver.MakeConstraint(lowerBound, double.PositiveInfinity, NutritionFacts.Properties[i].Name);
+
             foreach (var foodItem in foodItems)
             {
                 constraint.SetCoefficient(foodVariables[foodItem], foodItem.NutritionFacts[i]);
