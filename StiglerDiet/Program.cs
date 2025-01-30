@@ -17,12 +17,12 @@ public class StiglerDietProgram
         var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
         var foodItems = CsvParser.LoadFoodItems();
         
-        var (foodResults, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var (dailyFoodPrices, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
-        LogResults(solver, foodResults, nutritionFactsResult, minimumDailyAllowance, resultStatus);
+        LogResults(solver, dailyFoodPrices, nutritionFactsResult, minimumDailyAllowance, resultStatus);
     }
 
-    public static (IEnumerable<FoodResult>?, NutritionFacts?, ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
+    public static (IEnumerable<DailyFoodPrice>?, NutritionFacts?, ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> foods = [];
 
@@ -63,7 +63,7 @@ public class StiglerDietProgram
         // Process results
         NutritionFacts nutritionFactsResult = new();
 
-        List<FoodResult> foodResults = [];
+        List<DailyFoodPrice> dailyFoodPrices = [];
 
         for (int i = 0; i < foods.Count; ++i)
         {
@@ -75,14 +75,14 @@ public class StiglerDietProgram
                     nutritionFactsResult[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
                 }
 
-                foodResults.Add((foodItems[i], dailyPrice));
+                dailyFoodPrices.Add((foodItems[i], dailyPrice));
             }
         }
 
-        return (foodResults, nutritionFactsResult, resultStatus);
+        return (dailyFoodPrices, nutritionFactsResult, resultStatus);
     }
 
-    public static void LogResults(Solver solver, IEnumerable<FoodResult>? foodResults, NutritionFacts? nutritionFactsResult, NutritionFacts minimumDailyAllowance, ResultStatus resultStatus)
+    public static void LogResults(Solver solver, IEnumerable<DailyFoodPrice>? dailyFoodPrices, NutritionFacts? nutritionFactsResult, NutritionFacts minimumDailyAllowance, ResultStatus resultStatus)
     {
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
@@ -103,16 +103,16 @@ public class StiglerDietProgram
                 return;
         }
 
-        if (foodResults is null || nutritionFactsResult is null)
+        if (dailyFoodPrices is null || nutritionFactsResult is null)
         {
             return;
         }
 
         Console.WriteLine();
 
-        DisplayFoodResults(foodResults, Period.Daily);
+        DisplayFoodResults(dailyFoodPrices, Period.Daily);
 
-        DisplayFoodResults(foodResults, Period.Annual);
+        DisplayFoodResults(dailyFoodPrices, Period.Annual);
 
         DisplayNutritionFacts(minimumDailyAllowance, nutritionFactsResult);
 
@@ -138,13 +138,13 @@ public class StiglerDietProgram
         nutrientsTable.Write();
     }
 
-    private static void DisplayFoodResults(IEnumerable<FoodResult> foods, Period period)
+    private static void DisplayFoodResults(IEnumerable<DailyFoodPrice> dailyFoodPrices, Period period)
     {
         var annualTable = new ConsoleTable("Food", $"{period} Quantity", $"{period} Cost")
             .Configure(o => o.EnableCount = false);
 
         double totalCost = 0.0;
-        foreach (var (food, dailyPrice) in foods)
+        foreach (var (food, dailyPrice) in dailyFoodPrices)
         {
             double annualCost = (int)period * dailyPrice;
             double annualQuantity = (int)period * (dailyPrice / food.Price) * food.Quantity;
