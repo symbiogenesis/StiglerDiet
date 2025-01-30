@@ -17,12 +17,12 @@ public class StiglerDietProgram
         var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
         var foodItems = CsvParser.LoadFoodItems();
         
-        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var optimalDailyDiet = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
-        LogResults(solver, dailyFoodPrices, dailyNutritionFacts, minimumDailyAllowance, resultStatus);
+        LogResults(solver, optimalDailyDiet, minimumDailyAllowance);
     }
 
-    public static (IEnumerable<DailyFoodPrice>?, NutritionFacts?, ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
+    public static OptimalDailyDiet FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
         List<Variable> variables = [];
 
@@ -51,41 +51,37 @@ public class StiglerDietProgram
         }
         objective.SetMinimization();
 
-        ResultStatus resultStatus = solver.Solve();
+        var resultStatus = solver.Solve();
 
-        if (resultStatus is not ResultStatus.OPTIMAL and not ResultStatus.FEASIBLE)
+        OptimalDailyDiet optimalDailyDiet = new(resultStatus);
+
+        if (resultStatus is ResultStatus.OPTIMAL or ResultStatus.FEASIBLE)
         {
-            return (null, null, resultStatus);
-        }
-
-        // Process results
-        NutritionFacts dailyNutritionFacts = new();
-
-        List<DailyFoodPrice> dailyFoodPrices = [];
-
-        for (int i = 0; i < variables.Count; ++i)
-        {
-            double dailyPrice = variables[i].SolutionValue();
-            if (dailyPrice > 0.0)
+            // Process results
+            for (int i = 0; i < variables.Count; ++i)
             {
-                for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
+                double dailyPrice = variables[i].SolutionValue();
+                if (dailyPrice > 0.0)
                 {
-                    dailyNutritionFacts[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
-                }
+                    for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
+                    {
+                        optimalDailyDiet.NutritionFacts[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
+                    }
 
-                dailyFoodPrices.Add((foodItems[i], dailyPrice));
+                    optimalDailyDiet.Foods.Add((foodItems[i], dailyPrice));
+                }
             }
         }
 
-        return (dailyFoodPrices, dailyNutritionFacts, resultStatus);
+        return optimalDailyDiet;
     }
 
-    public static void LogResults(Solver solver, IEnumerable<DailyFoodPrice>? dailyFoodPrices, NutritionFacts? dailyNutritionFacts, NutritionFacts minimumDailyAllowance, ResultStatus resultStatus)
+    public static void LogResults(Solver solver, OptimalDailyDiet optimalDailyDiet, NutritionFacts minimumDailyAllowance)
     {
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
 
-        switch (resultStatus)
+        switch (optimalDailyDiet.ResultStatus)
         {
             case ResultStatus.OPTIMAL:
                 break;
@@ -101,18 +97,18 @@ public class StiglerDietProgram
                 return;
         }
 
-        if (dailyFoodPrices is null || dailyNutritionFacts is null)
+        if (optimalDailyDiet.Foods.Count == 0)
         {
             return;
         }
 
         Console.WriteLine();
 
-        DisplayFoodResults(dailyFoodPrices, Period.Daily);
+        DisplayFoodResults(optimalDailyDiet.Foods, Period.Daily);
 
-        DisplayFoodResults(dailyFoodPrices, Period.Annual);
+        DisplayFoodResults(optimalDailyDiet.Foods, Period.Annual);
 
-        DisplayNutritionFacts(minimumDailyAllowance, dailyNutritionFacts);
+        DisplayNutritionFacts(minimumDailyAllowance, optimalDailyDiet.NutritionFacts);
 
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
