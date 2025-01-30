@@ -16,6 +16,13 @@ public class OriginalStiglerDietTests
 
     private static Solver CreateSolver() => new("test", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
 
+    private static StringWriter SetConsoleWriter()
+    {
+        var consoleOutput = new StringWriter();
+        Console.SetOut(consoleOutput);
+        return consoleOutput;
+    }
+
     [Fact]
     public void Solver_ReturnsOptimalSolution()
     {
@@ -194,5 +201,111 @@ public class OriginalStiglerDietTests
         Assert.Empty(optimalDailyDiet.Foods);
         Assert.Equal(0, optimalDailyDiet.NutritionFacts.Calories);
         Assert.Equal(Solver.ResultStatus.INFEASIBLE, optimalDailyDiet.ResultStatus);
+    }
+
+    [Fact]
+    public void LogResults_HandlesOptimalResult()
+    {
+        // Arrange
+        using var solver = CreateSolver();
+        using var consoleOutput = SetConsoleWriter();
+
+        var optimalDailyDiet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+
+        // Act
+        StiglerDietProgram.LogResults(solver, optimalDailyDiet, minimumDailyAllowance);
+        var output = consoleOutput.ToString();
+
+        // Assert
+        Assert.Contains("Number of variables", output);
+        Assert.Contains("Number of constraints", output);
+        Assert.Contains("Food", output);
+        Assert.Contains("Daily Quantity", output);
+        Assert.Contains("Daily Cost", output);
+    }
+
+    [Fact]
+    public void LogResults_HandlesFeasibleResult()
+    {
+        // Arrange
+        using var solver = CreateSolver();
+        using var consoleOutput = SetConsoleWriter();
+
+        var foods = foodItems.Take(1)
+                .Select(f => new DailyFoodPrice(f, 1.0))
+                .ToList();
+
+        var feasibleDiet = new OptimalDailyDiet(Solver.ResultStatus.FEASIBLE) 
+        {
+            Foods = foods,
+        };
+
+        // Act
+        StiglerDietProgram.LogResults(solver, feasibleDiet, minimumDailyAllowance);
+        var output = consoleOutput.ToString();
+
+        // Assert
+        Assert.Contains("potentially suboptimal solution", output);
+    }
+
+    [Fact]
+    public void LogResults_HandlesInfeasibleResult()
+    {
+        // Arrange
+        using var solver = CreateSolver();
+        using var consoleOutput = SetConsoleWriter();
+
+        var infeasibleDiet = new OptimalDailyDiet(Solver.ResultStatus.INFEASIBLE);
+
+        // Act
+        StiglerDietProgram.LogResults(solver, infeasibleDiet, minimumDailyAllowance);
+        var output = consoleOutput.ToString();
+
+        // Assert
+        Assert.Contains("does not have an optimal solution", output);
+        Assert.Contains("could not solve the problem", output);
+    }
+
+    [Fact]
+    public void LogResults_HandlesEmptyFoodList()
+    {
+        // Arrange
+        using var solver = CreateSolver();
+        using var consoleOutput = SetConsoleWriter();
+
+        var emptyDiet = new OptimalDailyDiet(Solver.ResultStatus.OPTIMAL) 
+        {
+            Foods = [],
+        };
+
+        // Act
+        StiglerDietProgram.LogResults(solver, emptyDiet, minimumDailyAllowance);
+
+        // Assert
+        var output = consoleOutput.ToString();
+
+        Assert.Contains("Number of variables", output);
+        Assert.DoesNotContain("Daily Quantity", output);
+    }
+
+    [Theory]
+    [InlineData(Period.Daily)]
+    [InlineData(Period.Annual)]
+    public void LogResults_DisplaysCorrectPeriodTables(Period period)
+    {
+        // Arrange
+        using var solver = CreateSolver();
+        using var consoleOutput = SetConsoleWriter();
+
+        var optimalDailyDiet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+
+        // Act
+        StiglerDietProgram.LogResults(solver, optimalDailyDiet, minimumDailyAllowance);
+        
+        // Assert
+        var output = consoleOutput.ToString();
+
+        Assert.Contains($"{period} Quantity", output);
+        Assert.Contains($"{period} Cost", output);
     }
 }
