@@ -31,8 +31,6 @@ public class StiglerDietProgram
             foods.Add(solver.MakeNumVar(0.0, double.PositiveInfinity, foodItems[i].Name));
         }
 
-        List<Constraint> constraints = [];
-
         // Add nutrient constraints
         for (int i = 0; i < NutritionFacts.Properties.Length; ++i)
         {
@@ -42,7 +40,6 @@ public class StiglerDietProgram
             {
                 constraint.SetCoefficient(foods[j], foodItems[j].NutritionFacts[i]);
             }
-            constraints.Add(constraint);
         }
 
         // Set objective function (minimize cost)
