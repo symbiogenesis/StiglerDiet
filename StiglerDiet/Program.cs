@@ -116,7 +116,7 @@ public class StiglerDietProgram
                         optimalDailyDiet.NutritionFacts[j] += foodItem.NutritionFacts[j] * dailyPrice;
                     }
 
-                    OptimalDailyDietItem optimalDailyDietItem = (foodItem, dailyPrice, dailyPrice);
+                    OptimalDailyDietItem optimalDailyDietItem = (foodItem, dailyPrice, dailyPrice / foodItem.Price);
 
                     optimalDailyDiet.Add(optimalDailyDietItem);
                 }
