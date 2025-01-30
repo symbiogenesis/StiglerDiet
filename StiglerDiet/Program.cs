@@ -26,9 +26,8 @@ public class StiglerDietProgram
     {
         List<Variable> variables = [];
 
-        for (int i = 0; i < foodItems.Count; i++)
+        foreach (FoodItem foodItem in foodItems)
         {
-            FoodItem foodItem = foodItems[i];
             var variable = solver.MakeNumVar(0.0, double.PositiveInfinity, foodItem.Name);
             variables.Add(variable);
         }
