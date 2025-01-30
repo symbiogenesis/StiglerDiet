@@ -81,16 +81,16 @@ public class StiglerDietProgram
                 return;
         }
 
-        if (optimalDailyDiet.Foods.Count == 0)
+        if (optimalDailyDiet.Count == 0)
         {
             return;
         }
 
         Console.WriteLine();
 
-        DisplayFoodResults(optimalDailyDiet.Foods, Period.Daily);
+        DisplayFoodResults(optimalDailyDiet, Period.Daily);
 
-        DisplayFoodResults(optimalDailyDiet.Foods, Period.Annual);
+        DisplayFoodResults(optimalDailyDiet, Period.Annual);
 
         DisplayNutritionFacts(minimumDailyAllowance, optimalDailyDiet.NutritionFacts);
 
@@ -116,7 +116,9 @@ public class StiglerDietProgram
                         optimalDailyDiet.NutritionFacts[j] += foodItem.NutritionFacts[j] * dailyPrice;
                     }
 
-                    optimalDailyDiet.Foods.Add((foodItem, dailyPrice));
+                    OptimalDailyDietItem optimalDailyDietItem = (foodItem, dailyPrice, dailyPrice);
+
+                    optimalDailyDiet.Add(optimalDailyDietItem);
                 }
             }
         }
@@ -141,16 +143,16 @@ public class StiglerDietProgram
         nutrientsTable.Write();
     }
 
-    private static void DisplayFoodResults(IEnumerable<DailyFoodPrice> dailyFoodPrices, Period period)
+    private static void DisplayFoodResults(IEnumerable<OptimalDailyDietItem> dailyFoodPrices, Period period)
     {
         var annualTable = new ConsoleTable("Food", $"{period} Quantity", $"{period} Cost")
             .Configure(o => o.EnableCount = false);
 
         double totalCost = 0.0;
-        foreach (var (foodItem, dailyPrice) in dailyFoodPrices)
+        foreach (var (foodItem, dailyPrice, dailyQuantity) in dailyFoodPrices)
         {
             double annualCost = (int)period * dailyPrice;
-            double annualQuantity = (int)period * (dailyPrice / foodItem.Price) * foodItem.Quantity;
+            double annualQuantity = (int)period * dailyQuantity;
             annualTable.AddRow(foodItem.Name, $"{annualQuantity:N2} ({foodItem.Unit})", annualCost.ToString("C2"));
             totalCost += annualCost;
         }
