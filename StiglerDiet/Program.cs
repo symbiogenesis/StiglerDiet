@@ -24,11 +24,13 @@ public class StiglerDietProgram
 
     public static (IEnumerable<DailyFoodPrice>?, NutritionFacts?, ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
-        List<Variable> foods = [];
+        List<Variable> variables = [];
 
-        for (int i = 0; i < foodItems.Count; ++i)
+        for (int i = 0; i < foodItems.Count; i++)
         {
-            foods.Add(solver.MakeNumVar(0.0, double.PositiveInfinity, foodItems[i].Name));
+            FoodItem foodItem = foodItems[i];
+            var variable = solver.MakeNumVar(0.0, double.PositiveInfinity, foodItem.Name);
+            variables.Add(variable);
         }
 
         // Add nutrient constraints
@@ -38,7 +40,7 @@ public class StiglerDietProgram
                 solver.MakeConstraint(minimumDailyAllowance[i], double.PositiveInfinity, NutritionFacts.Properties[i].Name);
             for (int j = 0; j < foodItems.Count; ++j)
             {
-                constraint.SetCoefficient(foods[j], foodItems[j].NutritionFacts[i]);
+                constraint.SetCoefficient(variables[j], foodItems[j].NutritionFacts[i]);
             }
         }
 
@@ -46,7 +48,7 @@ public class StiglerDietProgram
         Objective objective = solver.Objective();
         for (int i = 0; i < foodItems.Count; ++i)
         {
-            objective.SetCoefficient(foods[i], 1);
+            objective.SetCoefficient(variables[i], 1);
         }
         objective.SetMinimization();
 
@@ -62,9 +64,9 @@ public class StiglerDietProgram
 
         List<DailyFoodPrice> dailyFoodPrices = [];
 
-        for (int i = 0; i < foods.Count; ++i)
+        for (int i = 0; i < variables.Count; ++i)
         {
-            double dailyPrice = foods[i].SolutionValue();
+            double dailyPrice = variables[i].SolutionValue();
             if (dailyPrice > 0.0)
             {
                 for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
@@ -141,11 +143,11 @@ public class StiglerDietProgram
             .Configure(o => o.EnableCount = false);
 
         double totalCost = 0.0;
-        foreach (var (food, dailyPrice) in dailyFoodPrices)
+        foreach (var (foodItem, dailyPrice) in dailyFoodPrices)
         {
             double annualCost = (int)period * dailyPrice;
-            double annualQuantity = (int)period * (dailyPrice / food.Price) * food.Quantity;
-            annualTable.AddRow(food.Name, $"{annualQuantity:N2} ({food.Unit})", annualCost.ToString("C2"));
+            double annualQuantity = (int)period * (dailyPrice / foodItem.Price) * foodItem.Quantity;
+            annualTable.AddRow(foodItem.Name, $"{annualQuantity:N2} ({foodItem.Unit})", annualCost.ToString("C2"));
             totalCost += annualCost;
         }
 
