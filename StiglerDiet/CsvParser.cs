@@ -8,7 +8,7 @@ public static class CsvParser
 {
     public static NutritionFacts LoadMinimumDailyAllowance()
     {
-        const string filePath = "Data/MinimumDailyAllowance.csv";
+        var filePath = BuildFilePath("MinimumDailyAllowance.csv");
         using var reader = new StreamReader(filePath);
         using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
         return csv.GetRecords<NutritionFacts>().First();
@@ -16,9 +16,11 @@ public static class CsvParser
 
     public static List<FoodItem> LoadFoodItems()
     {
-        const string filePath = "Data/FoodItems.csv";
+        var filePath = BuildFilePath("FoodItems.csv");
         using var reader = new StreamReader(filePath);
         using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
         return [.. csv.GetRecords<FoodItem>()];
     }
+
+    private static string BuildFilePath(string fileName) => Path.Combine("Data", fileName);
 }
