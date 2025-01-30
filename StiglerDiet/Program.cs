@@ -24,12 +24,12 @@ public class StiglerDietProgram
 
     public static OptimalDailyDiet FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
-        List<Variable> variables = [];
+        Dictionary<FoodItem, Variable> foodVariables = [];
 
         foreach (FoodItem foodItem in foodItems)
         {
             var variable = solver.MakeNumVar(0.0, double.PositiveInfinity, foodItem.Name);
-            variables.Add(variable);
+            foodVariables.Add(foodItem, variable);
         }
 
         // Add nutrient constraints
@@ -37,43 +37,25 @@ public class StiglerDietProgram
         {
             Constraint constraint =
                 solver.MakeConstraint(minimumDailyAllowance[i], double.PositiveInfinity, NutritionFacts.Properties[i].Name);
-            for (int j = 0; j < foodItems.Count; ++j)
+            foreach (var foodItem in foodItems)
             {
-                constraint.SetCoefficient(variables[j], foodItems[j].NutritionFacts[i]);
+                constraint.SetCoefficient(foodVariables[foodItem], foodItem.NutritionFacts[i]);
             }
         }
 
         // Set objective function (minimize cost)
         Objective objective = solver.Objective();
-        for (int i = 0; i < foodItems.Count; ++i)
+    
+        foreach (var (foodItem, variable) in foodVariables)
         {
-            objective.SetCoefficient(variables[i], 1);
+            objective.SetCoefficient(variable, 1);
         }
+    
         objective.SetMinimization();
 
         var resultStatus = solver.Solve();
 
-        OptimalDailyDiet optimalDailyDiet = new(resultStatus);
-
-        if (resultStatus is ResultStatus.OPTIMAL or ResultStatus.FEASIBLE)
-        {
-            // Process results
-            for (int i = 0; i < variables.Count; ++i)
-            {
-                double dailyPrice = variables[i].SolutionValue();
-                if (dailyPrice > 0.0)
-                {
-                    for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
-                    {
-                        optimalDailyDiet.NutritionFacts[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
-                    }
-
-                    optimalDailyDiet.Foods.Add((foodItems[i], dailyPrice));
-                }
-            }
-        }
-
-        return optimalDailyDiet;
+        return BuildDailyDietResult(resultStatus, foodVariables);
     }
 
     public static void LogResults(Solver solver, OptimalDailyDiet optimalDailyDiet, NutritionFacts minimumDailyAllowance)
@@ -113,6 +95,31 @@ public class StiglerDietProgram
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
+    }
+
+    private static OptimalDailyDiet BuildDailyDietResult(ResultStatus resultStatus, Dictionary<FoodItem, Variable> foodVariables)
+    {
+        OptimalDailyDiet optimalDailyDiet = new(resultStatus);
+
+        if (resultStatus is ResultStatus.OPTIMAL or ResultStatus.FEASIBLE)
+        {
+            // Process results
+            foreach (var (foodItem, variable) in foodVariables)
+            {
+                double dailyPrice = variable.SolutionValue();
+                if (dailyPrice > 0.0)
+                {
+                    for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
+                    {
+                        optimalDailyDiet.NutritionFacts[j] += foodItem.NutritionFacts[j] * dailyPrice;
+                    }
+
+                    optimalDailyDiet.Foods.Add((foodItem, dailyPrice));
+                }
+            }
+        }
+
+        return optimalDailyDiet;
     }
 
     private static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts dailyNutritionFacts)
