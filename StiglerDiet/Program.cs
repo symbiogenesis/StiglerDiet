@@ -17,9 +17,9 @@ public class StiglerDietProgram
         var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
         var foodItems = CsvParser.LoadFoodItems();
         
-        var (dailyFoodPrices, nutritionFactsResult, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
-        LogResults(solver, dailyFoodPrices, nutritionFactsResult, minimumDailyAllowance, resultStatus);
+        LogResults(solver, dailyFoodPrices, dailyNutritionFacts, minimumDailyAllowance, resultStatus);
     }
 
     public static (IEnumerable<DailyFoodPrice>?, NutritionFacts?, ResultStatus) FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
@@ -59,7 +59,7 @@ public class StiglerDietProgram
         }
 
         // Process results
-        NutritionFacts nutritionFactsResult = new();
+        NutritionFacts dailyNutritionFacts = new();
 
         List<DailyFoodPrice> dailyFoodPrices = [];
 
@@ -70,17 +70,17 @@ public class StiglerDietProgram
             {
                 for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
                 {
-                    nutritionFactsResult[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
+                    dailyNutritionFacts[j] += foodItems[i].NutritionFacts[j] * dailyPrice;
                 }
 
                 dailyFoodPrices.Add((foodItems[i], dailyPrice));
             }
         }
 
-        return (dailyFoodPrices, nutritionFactsResult, resultStatus);
+        return (dailyFoodPrices, dailyNutritionFacts, resultStatus);
     }
 
-    public static void LogResults(Solver solver, IEnumerable<DailyFoodPrice>? dailyFoodPrices, NutritionFacts? nutritionFactsResult, NutritionFacts minimumDailyAllowance, ResultStatus resultStatus)
+    public static void LogResults(Solver solver, IEnumerable<DailyFoodPrice>? dailyFoodPrices, NutritionFacts? dailyNutritionFacts, NutritionFacts minimumDailyAllowance, ResultStatus resultStatus)
     {
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");
@@ -101,7 +101,7 @@ public class StiglerDietProgram
                 return;
         }
 
-        if (dailyFoodPrices is null || nutritionFactsResult is null)
+        if (dailyFoodPrices is null || dailyNutritionFacts is null)
         {
             return;
         }
@@ -112,14 +112,14 @@ public class StiglerDietProgram
 
         DisplayFoodResults(dailyFoodPrices, Period.Annual);
 
-        DisplayNutritionFacts(minimumDailyAllowance, nutritionFactsResult);
+        DisplayNutritionFacts(minimumDailyAllowance, dailyNutritionFacts);
 
         Console.WriteLine("\nAdvanced usage:");
         Console.WriteLine($"Problem solved in {solver.WallTime()} milliseconds");
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
-    private static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts nutrientsResult)
+    private static void DisplayNutritionFacts(NutritionFacts minimumDailyAllowance, NutritionFacts dailyNutritionFacts)
     {
         var nutrientsTable = new ConsoleTable("Nutrient", "Amount", "% of RDA")
             .Configure(o => o.EnableCount = false);
@@ -128,8 +128,8 @@ public class StiglerDietProgram
         {
             var propertyInfo = NutritionFacts.Properties[i];
             var name = GetNutrientName(propertyInfo);
-            var amount = nutrientsResult[i].ToString("N2");
-            var percentage = nutrientsResult[i] / minimumDailyAllowance[i] * 100;
+            var amount = dailyNutritionFacts[i].ToString("N2");
+            var percentage = dailyNutritionFacts[i] / minimumDailyAllowance[i] * 100;
             nutrientsTable.AddRow(name, amount, $"{percentage:N2}%");
         }
 

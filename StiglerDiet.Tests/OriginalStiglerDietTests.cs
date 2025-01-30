@@ -23,11 +23,11 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
 
         // Act
-        var (dailyFoodPrices, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
         // Assert
         Assert.NotNull(dailyFoodPrices);
-        Assert.NotNull(nutrientsResult);
+        Assert.NotNull(dailyNutritionFacts);
     }
 
     [Theory]
@@ -65,7 +65,7 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
 
         // Act
-        var (dailyFoodPrices, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
         double? totalDailyCost = dailyFoodPrices?.Sum(item => item.DailyPrice);
 
         // Assert
@@ -80,7 +80,7 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
 
         // Act
-        var (dailyFoodPrices, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
         double? totalDailyCost = dailyFoodPrices?.Sum(item => item.DailyPrice);
 
         // Assert
@@ -118,11 +118,11 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
 
         // Act
-        var (dailyFoodPrices, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
         // Assert
         Assert.NotNull(dailyFoodPrices);
-        Assert.NotNull(nutrientsResult);
+        Assert.NotNull(dailyNutritionFacts);
     }
 
     [Fact]
@@ -146,11 +146,11 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
 
         // Act
-        var (dailyFoodPrices, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
         // Assert
         Assert.Equal(Solver.ResultStatus.OPTIMAL, resultStatus);
-        Assert.NotNull(nutrientsResult);
+        Assert.NotNull(dailyNutritionFacts);
         Assert.NotNull(dailyFoodPrices);
         Assert.NotEmpty(dailyFoodPrices);
     }
@@ -174,12 +174,12 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
         
         // Act
-        var (dailyFoodPrices, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, modifiedAllowance, foodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, modifiedAllowance, foodItems);
         
         // Assert
         Assert.True(resultStatus == Solver.ResultStatus.ABNORMAL, $"Expected ABNORMAL, but got {resultStatus}.");
         Assert.Null(dailyFoodPrices);
-        Assert.Null(nutrientsResult);
+        Assert.Null(dailyNutritionFacts);
     }
 
     [Fact]
@@ -190,11 +190,11 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
 
         // Act
-        var (dailyFoodPrices, nutrientsResult, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, emptyFoodItems);
+        var (dailyFoodPrices, dailyNutritionFacts, resultStatus) = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, emptyFoodItems);
 
         // Assert
         Assert.Null(dailyFoodPrices);
-        Assert.Null(nutrientsResult);
+        Assert.Null(dailyNutritionFacts);
         Assert.Equal(Solver.ResultStatus.INFEASIBLE, resultStatus);
     }
 }
