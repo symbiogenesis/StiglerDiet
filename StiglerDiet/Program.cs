@@ -145,16 +145,16 @@ public class StiglerDietProgram
 
     private static void DisplayFoodResults(IEnumerable<OptimalDailyDietItem> dailyFoodPrices, Period period)
     {
-        var annualTable = new ConsoleTable("Food", $"{period} Quantity", $"{period} Cost")
+        var annualTable = new ConsoleTable("Food", $"{period} Quantity", $"{period} Price")
             .Configure(o => o.EnableCount = false);
 
         double totalCost = 0.0;
         foreach (var (foodItem, dailyPrice, dailyQuantity) in dailyFoodPrices)
         {
-            double annualCost = (int)period * dailyPrice;
+            double annualPrice = (int)period * dailyPrice;
             double annualQuantity = (int)period * dailyQuantity;
-            annualTable.AddRow(foodItem.Name, $"{annualQuantity:N2} ({foodItem.Unit})", annualCost.ToString("C2"));
-            totalCost += annualCost;
+            annualTable.AddRow(foodItem.Name, $"{annualQuantity:N2} ({foodItem.Unit})", annualPrice.ToString("C2"));
+            totalCost += annualPrice;
         }
 
         annualTable.AddRow("---", "---", "---");
