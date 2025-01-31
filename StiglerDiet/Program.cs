@@ -111,12 +111,14 @@ public class StiglerDietProgram
                 double dailyPrice = variable.SolutionValue();
                 if (dailyPrice > 0.0)
                 {
+                    var dailyQuantity = dailyPrice / foodItem.Price;
+
                     for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
                     {
                         optimalDailyDiet.NutritionFacts[j] += foodItem.NutritionFacts[j] * dailyPrice;
                     }
 
-                    OptimalDailyDietItem optimalDailyDietItem = (foodItem, dailyPrice, dailyPrice / foodItem.Price);
+                    OptimalDailyDietItem optimalDailyDietItem = (foodItem, dailyPrice, dailyQuantity);
 
                     optimalDailyDiet.Add(optimalDailyDietItem);
                 }
