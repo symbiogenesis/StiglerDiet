@@ -145,7 +145,7 @@ public class StiglerDietProgram
 
     private static void DisplayFoodResults(IEnumerable<OptimalDailyDietItem> dailyFoodPrices, Period period)
     {
-        var annualTable = new ConsoleTable("Food", $"{period} Quantity", $"{period} Price")
+        var foodTable = new ConsoleTable("Food", $"{period} Quantity", $"{period} Price")
             .Configure(o => o.EnableCount = false);
 
         double totalCost = 0.0;
@@ -153,14 +153,14 @@ public class StiglerDietProgram
         {
             double annualPrice = (int)period * dailyPrice;
             double annualQuantity = (int)period * dailyQuantity * foodItem.Quantity;
-            annualTable.AddRow(foodItem.Name, $"{annualQuantity:N2} ({foodItem.Unit})", annualPrice.ToString("C2"));
+            foodTable.AddRow(foodItem.Name, $"{annualQuantity:N2} ({foodItem.Unit})", annualPrice.ToString("C2"));
             totalCost += annualPrice;
         }
 
-        annualTable.AddRow("---", "---", "---");
-        annualTable.AddRow("Total", null, totalCost.ToString("C2"));
+        foodTable.AddRow("---", "---", "---");
+        foodTable.AddRow("Total", null, totalCost.ToString("C2"));
 
-        annualTable.Write();
+        foodTable.Write();
     }
 
     private static string GetNutrientName(PropertyInfo propertyInfo)
