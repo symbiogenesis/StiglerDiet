@@ -70,13 +70,11 @@ public class StiglerDietProgram
             case ResultStatus.OPTIMAL:
                 break;
             case ResultStatus.FEASIBLE:
-                Console.WriteLine();
-                Console.WriteLine("The problem does not have an optimal solution!");
+                Console.WriteLine("\nThe problem does not have an optimal solution!");
                 Console.WriteLine("A potentially suboptimal solution was found.");
                 break;
             default:
-                Console.WriteLine();
-                Console.WriteLine("The problem does not have an optimal solution!");
+                Console.WriteLine("\nThe problem does not have an optimal solution!");
                 Console.WriteLine("The solver could not solve the problem.");
                 return;
         }
