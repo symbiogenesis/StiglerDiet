@@ -33,7 +33,7 @@ public class OriginalStiglerDietTests
         var optimalDailyDiet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
         // Assert
-        Assert.NotEmpty(optimalDailyDiet.Foods);
+        Assert.NotEmpty(optimalDailyDiet);
         Assert.NotEqual(0, optimalDailyDiet.NutritionFacts.Calories);
     }
 
@@ -73,7 +73,7 @@ public class OriginalStiglerDietTests
 
         // Act
         var optimalDailyDiet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
-        double? totalDailyCost = optimalDailyDiet.Foods?.Sum(item => item.DailyPrice);
+        double? totalDailyCost = optimalDailyDiet?.Sum(item => item.Price);
 
         // Assert
         Assert.NotNull(totalDailyCost);
@@ -88,7 +88,7 @@ public class OriginalStiglerDietTests
 
         // Act
         var optimalDailyDiet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
-        double? totalDailyCost = optimalDailyDiet.Foods?.Sum(item => item.DailyPrice);
+        double? totalDailyCost = optimalDailyDiet?.Sum(item => item.Price);
 
         // Assert
         Assert.NotNull(totalDailyCost);
@@ -128,7 +128,7 @@ public class OriginalStiglerDietTests
         var optimalDailyDiet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
         // Assert
-        Assert.NotEmpty(optimalDailyDiet.Foods);
+        Assert.NotEmpty(optimalDailyDiet);
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public class OriginalStiglerDietTests
 
         // Assert
         Assert.Equal(Solver.ResultStatus.OPTIMAL, optimalDailyDiet.ResultStatus);
-        Assert.NotEmpty(optimalDailyDiet.Foods);
+        Assert.NotEmpty(optimalDailyDiet);
         Assert.NotEqual(0, optimalDailyDiet.NutritionFacts.Calories);
     }
 
@@ -183,7 +183,7 @@ public class OriginalStiglerDietTests
         
         // Assert
         Assert.True(optimalDailyDiet.ResultStatus == Solver.ResultStatus.ABNORMAL, $"Expected ABNORMAL, but got {optimalDailyDiet.ResultStatus}.");
-        Assert.Empty(optimalDailyDiet.Foods);
+        Assert.Empty(optimalDailyDiet);
         Assert.Equal(0, optimalDailyDiet.NutritionFacts.Calories);
     }
 
@@ -198,7 +198,7 @@ public class OriginalStiglerDietTests
         var optimalDailyDiet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, emptyFoodItems);
 
         // Assert
-        Assert.Empty(optimalDailyDiet.Foods);
+        Assert.Empty(optimalDailyDiet);
         Assert.Equal(0, optimalDailyDiet.NutritionFacts.Calories);
         Assert.Equal(Solver.ResultStatus.INFEASIBLE, optimalDailyDiet.ResultStatus);
     }
@@ -232,13 +232,12 @@ public class OriginalStiglerDietTests
         using var consoleOutput = SetConsoleWriter();
 
         var foods = foodItems.Take(1)
-                .Select(f => new DailyFoodPrice(f, 1.0))
+                .Select(f => new OptimalDailyDietItem(f, 1.0, 1.0))
                 .ToList();
 
-        var feasibleDiet = new OptimalDailyDiet(Solver.ResultStatus.FEASIBLE) 
-        {
-            Foods = foods,
-        };
+        var feasibleDiet = new OptimalDailyDiet(Solver.ResultStatus.FEASIBLE);
+
+        feasibleDiet.AddRange(foods);
 
         // Act
         StiglerDietProgram.LogResults(solver, feasibleDiet, minimumDailyAllowance);
@@ -273,10 +272,7 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
         using var consoleOutput = SetConsoleWriter();
 
-        var emptyDiet = new OptimalDailyDiet(Solver.ResultStatus.OPTIMAL) 
-        {
-            Foods = [],
-        };
+        var emptyDiet = new OptimalDailyDiet(Solver.ResultStatus.OPTIMAL);
 
         // Act
         StiglerDietProgram.LogResults(solver, emptyDiet, minimumDailyAllowance);
