@@ -1,4 +1,4 @@
-﻿namespace StiglerDiet.Tests;
+namespace StiglerDiet.Tests;
 
 using Google.OrTools.LinearSolver;
 using StiglerDiet.Models;
@@ -221,7 +221,7 @@ public class OriginalStiglerDietTests
         Assert.Contains("Number of constraints", output);
         Assert.Contains("Food", output);
         Assert.Contains("Daily Quantity", output);
-        Assert.Contains("Daily Cost", output);
+        Assert.Contains("Daily Price", output);
     }
 
     [Fact]
@@ -302,6 +302,6 @@ public class OriginalStiglerDietTests
         var output = consoleOutput.ToString();
 
         Assert.Contains($"{period} Quantity", output);
-        Assert.Contains($"{period} Cost", output);
+        Assert.Contains($"{period} Price", output);
     }
 }
