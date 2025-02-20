@@ -62,7 +62,7 @@ public class LinearProgrammingSolver : ISolver
         foreach (var kvp in Objective.Coefficients)
         {
             int idx = varIndicies[kvp.Key];
-            if (idx >= 0) cVec[idx] = kvp.Value;
+            cVec[idx] = kvp.Value;
         }
 
         double[,] Adata = new double[m, n];
@@ -74,8 +74,7 @@ public class LinearProgrammingSolver : ISolver
             foreach (var kvp in constr.Coefficients)
             {
                 int idx = varIndicies[kvp.Key];
-                if (idx >= 0)
-                    Adata[i, idx] = kvp.Value;
+                Adata[i, idx] = kvp.Value;
             }
             bvals[i] = double.IsNegativeInfinity(constr.LowerBound) ? 0.0 : constr.LowerBound;
         }
@@ -98,8 +97,7 @@ public class LinearProgrammingSolver : ISolver
                 foreach (var kvp in c.Coefficients)
                 {
                     int idx = varIndicies[kvp.Key];
-                    if (idx >= 0)
-                        Adata[rowOffset, idx] = -kvp.Value;
+                    Adata[rowOffset, idx] = -kvp.Value;
                 }
                 bvals[rowOffset] = -c.UpperBound;
                 rowOffset++;
