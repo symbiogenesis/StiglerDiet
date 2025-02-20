@@ -171,14 +171,14 @@ public class LinearProgrammingSolver : ISolver
                 }
                 if (!feasible)
                     break;
-                // Add contribution from the objective.
-                for (int j = 0; j < n; j++)
-                    grad[j] += t * cVec[j];
 
-                // Compute gradient norm.
+                // Compute gradient norm and add contribution from the objective.
                 double norm = 0;
                 for (int j = 0; j < n; j++)
+                {
+                    grad[j] += t * cVec[j];
                     norm += grad[j] * grad[j];
+                }
                 norm = Math.Sqrt(norm);
                 if (norm < Tolerance) break;
 
