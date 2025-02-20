@@ -147,6 +147,8 @@ public class LinearProgrammingSolver : ISolver
         // Optimize the barrier function with backtracking line search.
         for (int outer = 0; outer < maxIter / innerIter; outer++)
         {
+            var candidate = new double[n];
+
             for (int inner = 0; inner < innerIter; inner++)
             {
                 iterations++;
@@ -187,9 +189,6 @@ public class LinearProgrammingSolver : ISolver
 
                 // Compute current barrier value using the helper function.
                 double currentVal = BarrierValue(solution);
-
-                // Copy current x to test a candidate update.
-                var candidate = new double[n];
 
                 // Determine step size that gives sufficient decrease.
                 while (true)
