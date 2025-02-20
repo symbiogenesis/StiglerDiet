@@ -141,23 +141,18 @@ public class LinearProgrammingSolver : ISolver
         double tol = 1e-7;      // tolerance for convergence
         int innerIter = 50;     // inner iterations
 
-        // Local helper to compute (A*x - b) for constraint i.
-        double ConstraintResidual(int i, double[] xVec)
-        {
-            double sum = 0.0;
-            for (int j = 0; j < n; j++)
-                sum += Adata[i, j] * xVec[j];
-            return sum - bvals[i];
-        }
-
         // Helper: compute barrier function value.
         double BarrierValue(double[] xVec)
         {
             double sum = 0.0;
             for (int i = 0; i < m; i++)
             {
-                double diff = ConstraintResidual(i, xVec);
-                if(diff <= 0)
+                double diff = -bvals[i];
+                for (int j = 0; j < n; j++)
+                {
+                    diff += Adata[i, j] * xVec[j];
+                }
+                if (diff <= 0)
                     return double.PositiveInfinity;
                 sum -= Math.Log(diff);
             }
@@ -210,23 +205,9 @@ public class LinearProgrammingSolver : ISolver
                 double stepSize = 1.0;
                 double alpha = 0.25;
                 double beta = 0.5;
-                double currentVal = 0.0;
 
-                // Compute current barrier value using residuals.
-                for (int i = 0; i < m; i++)
-                {
-                    // If any residual is nonpositive then BarrierValue would be infinity.
-                    if (residuals[i] <= 0)
-                    {
-                        currentVal = double.PositiveInfinity;
-                        break;
-                    }
-                    currentVal -= Math.Log(residuals[i]);
-                }
-                double obj = 0.0;
-                for (int j = 0; j < n; j++)
-                    obj += cVec[j] * solution[j];
-                currentVal += t * obj;
+                // Compute current barrier value using the helper function.
+                double currentVal = BarrierValue(solution);
 
                 // Copy current x to test a candidate update.
                 var xCandidate = new double[n];
@@ -248,24 +229,7 @@ public class LinearProgrammingSolver : ISolver
                     }
 
                     // Compute candidate barrier value.
-                    double candidateVal = 0.0;
-                    for (int i = 0; i < m; i++)
-                    {
-                        double AxCandidate = 0.0;
-                        for (int j = 0; j < n; j++)
-                            AxCandidate += Adata[i, j] * xCandidate[j];
-                        double resCandidate = AxCandidate - bvals[i];
-                        if (resCandidate <= 0)
-                        {
-                            candidateVal = double.PositiveInfinity;
-                            break;
-                        }
-                        candidateVal -= Math.Log(resCandidate);
-                    }
-                    obj = 0.0;
-                    for (int j = 0; j < n; j++)
-                        obj += cVec[j] * xCandidate[j];
-                    candidateVal += t * obj;
+                    double candidateVal = BarrierValue(xCandidate);
 
                     // Armijo condition.
                     double improvement = 0.0;
