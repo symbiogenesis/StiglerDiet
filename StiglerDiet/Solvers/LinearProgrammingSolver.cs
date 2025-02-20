@@ -258,12 +258,6 @@ public class LinearProgrammingSolver : ISolver
 
         _wallTime = (DateTime.UtcNow - startTime).TotalSeconds;
 
-        // Return infeasible if no solution is found.
-        if (solution == null || solution.Length == 0 || solution.All(double.IsNaN))
-        {
-            return ResultStatus.INFEASIBLE;
-        }
-
         return ResultStatus.OPTIMAL;
     }
 
