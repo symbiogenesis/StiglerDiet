@@ -173,23 +173,28 @@ public class LinearProgrammingSolver : ISolver
             for (int inner = 0; inner < innerIter; inner++)
             {
                 iterations++;
-                var grad = new double[n];
+                var residuals = new double[m];
                 bool feasible = true;
-
-                // Compute gradient: for each constraint, add -A[i,j] / ((A*x)[i] - b[i]).
+                // Precompute residuals for all constraints.
                 for (int i = 0; i < m; i++)
                 {
-                    double diff = ConstraintResidual(i, solution);
-                    if (diff <= 0)
-                    {
-                        feasible = false;
-                        break;
-                    }
+                    double Ax = 0.0;
                     for (int j = 0; j < n; j++)
-                        grad[j] += -Adata[i, j] / diff;
+                        Ax += Adata[i, j] * solution[j];
+                    residuals[i] = Ax - bvals[i];
+                    if (residuals[i] <= 0)
+                        feasible = false;
                 }
-                if (!feasible) break;
+                if (!feasible)
+                    break;
 
+                // Compute gradient using precomputed residuals.
+                var grad = new double[n];
+                for (int i = 0; i < m; i++)
+                {
+                    for (int j = 0; j < n; j++)
+                        grad[j] += -Adata[i, j] / residuals[i];
+                }
                 // Add contribution from the objective.
                 for (int j = 0; j < n; j++)
                     grad[j] += t * cVec[j];
@@ -205,7 +210,23 @@ public class LinearProgrammingSolver : ISolver
                 double stepSize = 1.0;
                 double alpha = 0.25;
                 double beta = 0.5;
-                double currentVal = BarrierValue(solution);
+                double currentVal = 0.0;
+
+                // Compute current barrier value using residuals.
+                for (int i = 0; i < m; i++)
+                {
+                    // If any residual is nonpositive then BarrierValue would be infinity.
+                    if (residuals[i] <= 0)
+                    {
+                        currentVal = double.PositiveInfinity;
+                        break;
+                    }
+                    currentVal -= Math.Log(residuals[i]);
+                }
+                double obj = 0.0;
+                for (int j = 0; j < n; j++)
+                    obj += cVec[j] * solution[j];
+                currentVal += t * obj;
 
                 // Copy current x to test a candidate update.
                 var xCandidate = new double[n];
@@ -225,7 +246,27 @@ public class LinearProgrammingSolver : ISolver
                         if (xCandidate[j] < 1e-9)
                             xCandidate[j] = 1e-9;
                     }
-                    double candidateVal = BarrierValue(xCandidate);
+
+                    // Compute candidate barrier value.
+                    double candidateVal = 0.0;
+                    for (int i = 0; i < m; i++)
+                    {
+                        double AxCandidate = 0.0;
+                        for (int j = 0; j < n; j++)
+                            AxCandidate += Adata[i, j] * xCandidate[j];
+                        double resCandidate = AxCandidate - bvals[i];
+                        if (resCandidate <= 0)
+                        {
+                            candidateVal = double.PositiveInfinity;
+                            break;
+                        }
+                        candidateVal -= Math.Log(resCandidate);
+                    }
+                    obj = 0.0;
+                    for (int j = 0; j < n; j++)
+                        obj += cVec[j] * xCandidate[j];
+                    candidateVal += t * obj;
+
                     // Armijo condition.
                     double improvement = 0.0;
                     for (int j = 0; j < n; j++)
