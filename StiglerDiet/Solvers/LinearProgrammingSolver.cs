@@ -52,12 +52,8 @@ public class LinearProgrammingSolver : ISolver
         }
 
         // Count extra rows for variable and constraint upper bounds.
-        int extraVarRows = 0;
-        foreach (var v in Variables)
-            if (!double.IsPositiveInfinity(v.UpperBound)) extraVarRows++;
-        int extraConstrRows = 0;
-        foreach (var c in Constraints)
-            if (!double.IsPositiveInfinity(c.UpperBound)) extraConstrRows++;
+        int extraVarRows = Variables.Count(v => !double.IsPositiveInfinity(v.UpperBound));
+        int extraConstrRows = Constraints.Count(c => !double.IsPositiveInfinity(c.UpperBound));
 
         int m = baseM + extraVarRows + extraConstrRows;
         int n = baseN;
@@ -123,9 +119,7 @@ public class LinearProgrammingSolver : ISolver
         }
 
         // Initialize x with 1's.
-        var solution = new double[n];
-        for (int j = 0; j < n; j++) 
-            solution[j] = 1.0;
+        var solution = Enumerable.Repeat(1.0, n).ToArray();
 
         // Phase 1: Find feasible starting point.
         bool allFeasible = false;
