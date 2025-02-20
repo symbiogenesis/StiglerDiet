@@ -49,10 +49,10 @@ public class LinearProgrammingSolver : ISolver
         }
 
         // Cache variable indices.
-        var varIndicies = new Dictionary<Variable, int>(baseN);
+        var varIndices = new Dictionary<Variable, int>(baseN);
         for (int i = 0; i < baseN; i++)
         {
-            varIndicies[Variables[i]] = i;
+            varIndices[Variables[i]] = i;
         }
 
         // Count extra rows for variable and constraint upper bounds.
@@ -69,7 +69,7 @@ public class LinearProgrammingSolver : ISolver
         double[] cVec = new double[n];
         foreach (var kvp in Objective.Coefficients)
         {
-            int idx = varIndicies[kvp.Key];
+            int idx = varIndices[kvp.Key];
             cVec[idx] = sign * kvp.Value;
         }
 
@@ -81,7 +81,7 @@ public class LinearProgrammingSolver : ISolver
             var constr = Constraints[i];
             foreach (var kvp in constr.Coefficients)
             {
-                int idx = varIndicies[kvp.Key];
+                int idx = varIndices[kvp.Key];
                 Adata[i, idx] = kvp.Value;
             }
             bvals[i] = double.IsNegativeInfinity(constr.LowerBound) ? 0.0 : constr.LowerBound;
@@ -92,7 +92,7 @@ public class LinearProgrammingSolver : ISolver
         {
             if (!double.IsPositiveInfinity(v.UpperBound))
             {
-                int varIndex = varIndicies[v];
+                int varIndex = varIndices[v];
                 Adata[rowOffset, varIndex] = -1.0;
                 bvals[rowOffset] = -v.UpperBound;
                 rowOffset++;
@@ -104,7 +104,7 @@ public class LinearProgrammingSolver : ISolver
             {
                 foreach (var kvp in c.Coefficients)
                 {
-                    int idx = varIndicies[kvp.Key];
+                    int idx = varIndices[kvp.Key];
                     Adata[rowOffset, idx] = -kvp.Value;
                 }
                 bvals[rowOffset] = -c.UpperBound;
