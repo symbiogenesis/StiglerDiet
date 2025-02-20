@@ -2,27 +2,40 @@ namespace StiglerDiet;
 
 using System.ComponentModel;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using ConsoleTables;
-using Google.OrTools.LinearSolver;
 using StiglerDiet.Models;
-using static Google.OrTools.LinearSolver.Solver;
+using StiglerDiet.Solvers;
+using StiglerDiet.Solvers.Interfaces;
 
 public class StiglerDietProgram
 {
     static void Main()
     {
-        using var solver = new Solver("StiglerDietSolver", OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+        ISolver solver;
 
-        // Load data from CSV files
-        var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
-        var foodItems = CsvParser.LoadFoodItems();
-        
-        var optimalDailyDiet = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            solver = new LinearProgrammingSolver();
+        }
+        else
+        {
+            solver = new GoogleSolver();
+        }
 
-        LogResults(solver, optimalDailyDiet, minimumDailyAllowance);
+        using (solver)
+        {        
+            // Load data from CSV files
+            var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
+            var foodItems = CsvParser.LoadFoodItems();
+            
+            var optimalDailyDiet = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+
+            LogResults(solver, optimalDailyDiet, minimumDailyAllowance);
+        }
     }
 
-    public static OptimalDailyDiet FindOptimalDiet(Solver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
+    public static OptimalDailyDiet FindOptimalDiet(ISolver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
         Dictionary<FoodItem, Variable> foodVariables = [];
 
@@ -46,7 +59,7 @@ public class StiglerDietProgram
         }
 
         // Set objective function (minimize cost)
-        Objective objective = solver.Objective();
+        var objective = solver.Objective;
     
         foreach (var (foodItem, variable) in foodVariables)
         {
@@ -60,7 +73,7 @@ public class StiglerDietProgram
         return BuildDailyDietResult(resultStatus, foodVariables);
     }
 
-    public static void LogResults(Solver solver, OptimalDailyDiet optimalDailyDiet, NutritionFacts minimumDailyAllowance)
+    public static void LogResults(ISolver solver, OptimalDailyDiet optimalDailyDiet, NutritionFacts minimumDailyAllowance)
     {
         Console.WriteLine($"Number of variables = {solver.NumVariables()}");
         Console.WriteLine($"Number of constraints = {solver.NumConstraints()}");

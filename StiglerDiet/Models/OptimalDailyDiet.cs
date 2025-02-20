@@ -1,6 +1,6 @@
 namespace StiglerDiet.Models;
 
-using static Google.OrTools.LinearSolver.Solver;
+using StiglerDiet.Solvers;
 
 public class OptimalDailyDiet(ResultStatus resultStatus) : List<OptimalDailyDietItem>
 {   
