@@ -118,22 +118,6 @@ public class LinearProgrammingSolver : ISolver
         // Initialize x with 1's.
         var solution = Enumerable.Repeat(1.0, n).ToArray();
 
-        // Phase 1: Find feasible starting point.
-        double minDiff = double.PositiveInfinity;
-        for (int i = 0; i < m; i++)
-        {
-            double Ax = 0.0;
-            for (int j = 0; j < n; j++)
-                Ax += Adata[i, j] * solution[j];
-            minDiff = Math.Min(minDiff, Ax - bvals[i]);
-        }
-        if (minDiff <= 0)
-        {
-            double offset = Math.Abs(minDiff) + 1.0;
-            for (int j = 0; j < n; j++)
-                solution[j] += offset;
-        }
-
         // Barrier method parameters.
         double t = 1.0;         // initial scaling parameter
         double mu = 2.0;        // factor to increase t
