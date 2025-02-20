@@ -62,11 +62,15 @@ public class LinearProgrammingSolver : ISolver
         int m = baseM + extraVarRows + extraConstrRows;
         int n = baseN;
 
+        bool isMin = Objective.IsMinimization;
+        double sign = isMin ? 1.0 : -1.0;
+
+        // Initialize cVec with sign factor combined.
         double[] cVec = new double[n];
         foreach (var kvp in Objective.Coefficients)
         {
             int idx = varIndicies[kvp.Key];
-            cVec[idx] = kvp.Value;
+            cVec[idx] = sign * kvp.Value;
         }
 
         double[,] Adata = new double[m, n];
@@ -108,17 +112,8 @@ public class LinearProgrammingSolver : ISolver
             }
         }
 
-        bool isMin = Objective.IsMinimization;
         const int maxIter = 1000;
-
         int iterations = 0;
-
-        // If maximizing, flip c (we minimize).
-        if (!isMin)
-        {
-            for (int j = 0; j < n; j++)
-                cVec[j] = -cVec[j];
-        }
 
         // Initialize x with 1's.
         var solution = Enumerable.Repeat(1.0, n).ToArray();
