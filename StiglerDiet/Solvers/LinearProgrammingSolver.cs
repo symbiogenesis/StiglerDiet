@@ -215,17 +215,12 @@ public class LinearProgrammingSolver : ISolver
                 // Copy current x to test a candidate update.
                 var candidate = new double[n];
 
-                // Get descent direction.
-                var descent = new double[n];
-                for (int j = 0; j < n; j++)
-                    descent[j] = -grad[j];
-
                 // Determine step size that gives sufficient decrease.
                 while (true)
                 {
                     for (int j = 0; j < n; j++)
                     {
-                        candidate[j] = Math.Max(solution[j] + stepSize * descent[j], LowerBoundThreshold);
+                        candidate[j] = Math.Max(solution[j] - stepSize * grad[j], LowerBoundThreshold);
                     }
 
                     // Compute candidate barrier value.
@@ -241,6 +236,7 @@ public class LinearProgrammingSolver : ISolver
                     if (stepSize < MinStepSize)
                         break; // prevent too small steps.
                 }
+
                 // Update solution.
                 Array.Copy(candidate, solution, n);
             }
