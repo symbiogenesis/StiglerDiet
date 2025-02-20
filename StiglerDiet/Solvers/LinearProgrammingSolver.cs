@@ -241,7 +241,7 @@ public class LinearProgrammingSolver : ISolver
                     if (stepSize < MinStepSize)
                         break; // prevent too small steps.
                 }
-                // Update x.
+                // Update solution.
                 Array.Copy(candidate, solution, n);
             }
             t *= mu; // Increase barrier weight.
