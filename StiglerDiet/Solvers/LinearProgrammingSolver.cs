@@ -13,6 +13,10 @@ public class LinearProgrammingSolver : ISolver
     private int _iterations = 0;
     private bool disposedValue;
 
+    private const double Tolerance = 1e-7;
+    private const double LowerBoundThreshold = 1e-9;
+    private const double MinStepSize = 1e-12;
+
     public List<Variable> Variables { get; } = [];
     public List<Constraint> Constraints { get; } = [];
     public Objective Objective { get; } = new();
@@ -138,7 +142,6 @@ public class LinearProgrammingSolver : ISolver
         // Barrier method parameters.
         double t = 1.0;         // initial scaling parameter
         double mu = 2.0;        // factor to increase t
-        double tol = 1e-7;      // tolerance for convergence
         int innerIter = 50;     // inner iterations
 
         // Helper: compute barrier function value.
@@ -199,7 +202,7 @@ public class LinearProgrammingSolver : ISolver
                 for (int j = 0; j < n; j++)
                     norm += grad[j] * grad[j];
                 norm = Math.Sqrt(norm);
-                if (norm < tol) break;
+                if (norm < Tolerance) break;
 
                 // Backtracking line search parameters.
                 double stepSize = 1.0;
@@ -210,7 +213,7 @@ public class LinearProgrammingSolver : ISolver
                 double currentVal = BarrierValue(solution);
 
                 // Copy current x to test a candidate update.
-                var xCandidate = new double[n];
+                var candidate = new double[n];
 
                 // Get descent direction.
                 var descent = new double[n];
@@ -222,36 +225,36 @@ public class LinearProgrammingSolver : ISolver
                 {
                     for (int j = 0; j < n; j++)
                     {
-                        xCandidate[j] = solution[j] + stepSize * descent[j];
+                        candidate[j] = solution[j] + stepSize * descent[j];
                         // Ensure positivity.
-                        if (xCandidate[j] < 1e-9)
-                            xCandidate[j] = 1e-9;
+                        if (candidate[j] < LowerBoundThreshold)
+                            candidate[j] = LowerBoundThreshold;
                     }
 
                     // Compute candidate barrier value.
-                    double candidateVal = BarrierValue(xCandidate);
+                    double candidateVal = BarrierValue(candidate);
 
                     // Armijo condition.
                     double improvement = 0.0;
                     for (int j = 0; j < n; j++)
-                        improvement += grad[j] * (xCandidate[j] - solution[j]);
+                        improvement += grad[j] * (candidate[j] - solution[j]);
                     if (candidateVal <= currentVal + alpha * stepSize * improvement)
                         break;
                     stepSize *= beta;
-                    if (stepSize < 1e-12)
+                    if (stepSize < MinStepSize)
                         break; // prevent too small steps.
                 }
                 // Update x.
-                Array.Copy(xCandidate, solution, n);
+                Array.Copy(candidate, solution, n);
             }
             t *= mu; // Increase barrier weight.
-            if (m / t < tol) break;
+            if (m / t < Tolerance) break;
         }
 
         // Fix near-zero entries.
         for (int j = 0; j < n; j++)
         {
-            if (Math.Abs(solution[j]) < tol)
+            if (Math.Abs(solution[j]) < Tolerance)
                 solution[j] = 0.0;
         }
 
