@@ -122,38 +122,19 @@ public class LinearProgrammingSolver : ISolver
         var solution = Enumerable.Repeat(1.0, n).ToArray();
 
         // Phase 1: Find feasible starting point.
-        bool allFeasible = false;
-        int feasibilityIter = 0;
-        int maxFeasibilityIter = 200;
-        while (!allFeasible && feasibilityIter < maxFeasibilityIter)
+        double minDiff = double.PositiveInfinity;
+        for (int i = 0; i < m; i++)
         {
-            allFeasible = true;
-            double totalDiff = 0.0;
-            int violationCount = 0;
-            for (int i = 0; i < m; i++)
-            {
-                double Ax = 0.0;
-                for (int j = 0; j < n; j++)
-                    Ax += Adata[i, j] * solution[j];
-                if (Ax <= bvals[i] + 1e-8)
-                {
-                    double diff = bvals[i] - Ax + 1.0;
-                    totalDiff += diff;
-                    violationCount++;
-                    allFeasible = false;
-                }
-            }
-            if (!allFeasible && violationCount > 0)
-            {
-                double correction = totalDiff / (n * violationCount);
-                for (int j = 0; j < n; j++)
-                    solution[j] += correction;
-            }
-            feasibilityIter++;
+            double Ax = 0.0;
+            for (int j = 0; j < n; j++)
+                Ax += Adata[i, j] * solution[j];
+            minDiff = Math.Min(minDiff, Ax - bvals[i]);
         }
-        if (!allFeasible)
+        if (minDiff <= 0)
         {
-            throw new Exception("Failed to find a feasible starting point.");
+            double offset = Math.Abs(minDiff) + 1.0;
+            for (int j = 0; j < n; j++)
+                solution[j] += offset;
         }
 
         // Barrier method parameters.
