@@ -171,28 +171,25 @@ public class LinearProgrammingSolver : ISolver
             for (int inner = 0; inner < innerIter; inner++)
             {
                 iterations++;
-                var residuals = new double[m];
                 bool feasible = true;
-                // Precompute residuals for all constraints.
+                var grad = new double[n];
                 for (int i = 0; i < m; i++)
                 {
                     double Ax = 0.0;
                     for (int j = 0; j < n; j++)
                         Ax += Adata[i, j] * solution[j];
-                    residuals[i] = Ax - bvals[i];
-                    if (residuals[i] <= 0)
+
+                    double residual = Ax - bvals[i];
+                    if (residual <= 0)
+                    {
                         feasible = false;
+                        break;
+                    }
+                    for (int j = 0; j < n; j++)
+                        grad[j] += -Adata[i, j] / residual;
                 }
                 if (!feasible)
                     break;
-
-                // Compute gradient using precomputed residuals.
-                var grad = new double[n];
-                for (int i = 0; i < m; i++)
-                {
-                    for (int j = 0; j < n; j++)
-                        grad[j] += -Adata[i, j] / residuals[i];
-                }
                 // Add contribution from the objective.
                 for (int j = 0; j < n; j++)
                     grad[j] += t * cVec[j];
