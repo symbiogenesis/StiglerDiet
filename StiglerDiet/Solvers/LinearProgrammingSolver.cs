@@ -141,7 +141,16 @@ public class LinearProgrammingSolver : ISolver
         double t = 1.0;         // initial scaling parameter
         double mu = 2.0;        // factor to increase t
         double tol = 1e-7;      // tolerance for convergence
-        int innerIter = 50;     // increased number of inner iterations
+        int innerIter = 50;     // inner iterations
+
+        // Local helper to compute (A*x - b) for constraint i.
+        double ConstraintResidual(int i, double[] xVec)
+        {
+            double sum = 0.0;
+            for (int j = 0; j < n; j++)
+                sum += Adata[i, j] * xVec[j];
+            return sum - bvals[i];
+        }
 
         // Helper: compute barrier function value.
         double BarrierValue(double[] xVec)
@@ -149,10 +158,7 @@ public class LinearProgrammingSolver : ISolver
             double sum = 0.0;
             for (int i = 0; i < m; i++)
             {
-                double Ax_minus_b = 0.0;
-                for (int j = 0; j < n; j++)
-                    Ax_minus_b += Adata[i, j] * xVec[j];
-                double diff = Ax_minus_b - bvals[i];
+                double diff = ConstraintResidual(i, xVec);
                 if(diff <= 0)
                     return double.PositiveInfinity;
                 sum -= Math.Log(diff);
@@ -175,10 +181,7 @@ public class LinearProgrammingSolver : ISolver
                 // Compute gradient: for each constraint, add -A[i,j] / ((A*x)[i] - b[i]).
                 for (int i = 0; i < m; i++)
                 {
-                    double Ax_minus_b = 0.0;
-                    for (int j = 0; j < n; j++)
-                        Ax_minus_b += Adata[i, j] * solution[j];
-                    double diff = Ax_minus_b - bvals[i];
+                    double diff = ConstraintResidual(i, solution);
                     if (diff <= 0)
                     {
                         feasible = false;
