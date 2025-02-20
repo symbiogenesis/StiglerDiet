@@ -145,7 +145,7 @@ public class LinearProgrammingSolver : ISolver
         }
 
         // Optimize the barrier function with backtracking line search.
-        for (int outer = 0; outer < maxIter / innerIter; outer++)
+        while (iterations < maxIter && m / t >= Tolerance)
         {
             var candidate = new double[n];
 
@@ -216,9 +216,8 @@ public class LinearProgrammingSolver : ISolver
                 Array.Copy(candidate, solution, n);
             }
             t *= mu; // Increase barrier weight.
-            if (m / t < Tolerance) break;
         }
-
+        
         // Fix near-zero entries.
         for (int j = 0; j < n; j++)
         {
