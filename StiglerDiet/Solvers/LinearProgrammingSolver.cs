@@ -219,18 +219,11 @@ public class LinearProgrammingSolver : ISolver
             }
             t *= mu; // Increase barrier weight.
         }
-        
-        // Fix near-zero entries.
-        for (int j = 0; j < n; j++)
-        {
-            if (Math.Abs(solution[j]) < Tolerance)
-                solution[j] = 0.0;
-        }
 
         _iterations = iterations;
 
         for (int j = 0; j < baseN; j++)
-            Variables[j].Solution = solution[j];
+            Variables[j].Solution = Math.Abs(solution[j]) < Tolerance ? 0.0 : solution[j];
 
         _wallTime = (DateTime.UtcNow - startTime).TotalSeconds;
 
