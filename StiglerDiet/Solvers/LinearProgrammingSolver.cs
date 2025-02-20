@@ -195,19 +195,17 @@ public class LinearProgrammingSolver : ISolver
                 // Determine step size that gives sufficient decrease.
                 while (true)
                 {
-                    for (int j = 0; j < n; j++)
-                    {
-                        candidate[j] = Math.Max(solution[j] - stepSize * grad[j], LowerBoundThreshold);
-                    }
-
-                    // Compute candidate barrier value.
-                    double candidateVal = BarrierValue(candidate);
-
-                    // Armijo condition.
                     double improvement = 0.0;
                     for (int j = 0; j < n; j++)
-                        improvement += grad[j] * (candidate[j] - solution[j]);
-                    if (candidateVal <= currentVal + alpha * stepSize * improvement)
+                    {
+                        double newVal = Math.Max(solution[j] - stepSize * grad[j], LowerBoundThreshold);
+                        improvement += grad[j] * (newVal - solution[j]);
+                        candidate[j] = newVal;
+                    }
+                    
+                    double candidateVal = BarrierValue(candidate);
+                    
+                    if (candidateVal <= currentVal + alpha * improvement)
                         break;
                     stepSize *= beta;
                     if (stepSize < MinStepSize)
