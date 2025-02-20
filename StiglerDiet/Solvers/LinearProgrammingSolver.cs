@@ -225,10 +225,7 @@ public class LinearProgrammingSolver : ISolver
                 {
                     for (int j = 0; j < n; j++)
                     {
-                        candidate[j] = solution[j] + stepSize * descent[j];
-                        // Ensure positivity.
-                        if (candidate[j] < LowerBoundThreshold)
-                            candidate[j] = LowerBoundThreshold;
+                        candidate[j] = Math.Max(solution[j] + stepSize * descent[j], LowerBoundThreshold);
                     }
 
                     // Compute candidate barrier value.
