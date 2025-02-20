@@ -42,7 +42,7 @@ public class LinearProgrammingSolver : ISolver
         int baseM = Constraints.Count;
         int baseN = Variables.Count;
 
-        if (baseM == 0 || baseN == 0) 
+        if (baseM == 0 || baseN == 0)
         {
             _wallTime = (DateTime.UtcNow - startTime).TotalSeconds;
             return ResultStatus.INFEASIBLE;
@@ -123,17 +123,23 @@ public class LinearProgrammingSolver : ISolver
         double mu = 2.0;        // factor to increase t
         int innerIter = 50;     // inner iterations
 
-        // Helper: compute barrier function value.
+        // Local function to compute the residual for a constraint row.
+        double Residual(int i, double[] x)
+        {
+            double r = -bvals[i];
+            for (int j = 0; j < n; j++)
+            {
+                r += Adata[i, j] * x[j];
+            }
+            return r;
+        }
+
         double BarrierValue(double[] xVec)
         {
             double sum = 0.0;
             for (int i = 0; i < m; i++)
             {
-                double diff = -bvals[i];
-                for (int j = 0; j < n; j++)
-                {
-                    diff += Adata[i, j] * xVec[j];
-                }
+                double diff = Residual(i, xVec);
                 if (diff <= 0)
                     return double.PositiveInfinity;
                 sum -= Math.Log(diff);
@@ -156,11 +162,7 @@ public class LinearProgrammingSolver : ISolver
                 var grad = new double[n];
                 for (int i = 0; i < m; i++)
                 {
-                    double Ax = 0.0;
-                    for (int j = 0; j < n; j++)
-                        Ax += Adata[i, j] * solution[j];
-
-                    double residual = Ax - bvals[i];
+                    double residual = Residual(i, solution);
                     if (residual <= 0)
                     {
                         feasible = false;
