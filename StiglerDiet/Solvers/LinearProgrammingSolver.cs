@@ -144,11 +144,11 @@ public class LinearProgrammingSolver : ISolver
             return t * obj + sum;
         }
 
+        var candidate = new double[n];
+
         // Optimize the barrier function with backtracking line search.
         while (iterations < maxIter && m / t >= Tolerance)
         {
-            var candidate = new double[n];
-
             for (int inner = 0; inner < innerIter; inner++)
             {
                 iterations++;
