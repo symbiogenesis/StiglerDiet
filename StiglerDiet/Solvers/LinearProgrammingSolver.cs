@@ -1,7 +1,6 @@
 namespace StiglerDiet.Solvers;
 
-using System;
-using System.Collections.Generic;
+using MathNet.Numerics.LinearAlgebra;
 using StiglerDiet.Solvers.Interfaces;
 
 /// <summary>
@@ -9,9 +8,8 @@ using StiglerDiet.Solvers.Interfaces;
 /// </summary>
 public class LinearProgrammingSolver : ISolver
 {
-    private double _wallTime = 0.0;
-    private int _iterations = 0;
-    private bool disposedValue;
+    private double _wallTime;
+    private int _iterations;
 
     private const double Tolerance = 1e-7;
     private const double LowerBoundThreshold = 1e-9;
@@ -38,190 +36,139 @@ public class LinearProgrammingSolver : ISolver
     public ResultStatus Solve()
     {
         var startTime = DateTime.UtcNow;
-
-        int baseM = Constraints.Count;
-        int baseN = Variables.Count;
-
-        if (baseM == 0 || baseN == 0)
+        if (Constraints.Count == 0 || Variables.Count == 0)
         {
             _wallTime = (DateTime.UtcNow - startTime).TotalSeconds;
             return ResultStatus.INFEASIBLE;
         }
 
-        // Cache variable indices.
-        var varIndices = new Dictionary<Variable, int>(baseN);
-        for (int i = 0; i < baseN; i++)
-        {
+        int n = Variables.Count;
+
+        // Map each variable to its index.
+        var varIndices = new Dictionary<Variable, int>(Variables.Count);
+        for (int i = 0; i < Variables.Count; i++)
             varIndices[Variables[i]] = i;
+
+        var rows = new List<double[]>();
+        var rhs = new List<double>();
+
+        // Helper to add a row and its right-hand side value.
+        void AddRow(double[] row, double bound)
+        {
+            rows.Add(row);
+            rhs.Add(bound);
         }
 
-        // Count extra rows for variable and constraint upper bounds.
-        int extraVarRows = Variables.Count(v => !double.IsPositiveInfinity(v.UpperBound));
-        int extraConstrRows = Constraints.Count(c => !double.IsPositiveInfinity(c.UpperBound));
-
-        int m = baseM + extraVarRows + extraConstrRows;
-        int n = baseN;
-
-        bool isMin = Objective.IsMinimization;
-        double sign = isMin ? 1.0 : -1.0;
-
-        // Initialize cVec with sign factor combined.
-        double[] cVec = new double[n];
-        foreach (var kvp in Objective.Coefficients)
-        {
-            int idx = varIndices[kvp.Key];
-            cVec[idx] = sign * kvp.Value;
-        }
-
-        double[,] Adata = new double[m, n];
-        double[] bvals = new double[m];
-
-        for (int i = 0; i < baseM; i++)
-        {
-            var constr = Constraints[i];
-            foreach (var kvp in constr.Coefficients)
+            // User-defined constraints.
+            foreach (var constr in Constraints)
             {
-                int idx = varIndices[kvp.Key];
-                Adata[i, idx] = kvp.Value;
-            }
-            bvals[i] = double.IsNegativeInfinity(constr.LowerBound) ? 0.0 : constr.LowerBound;
-        }
+                var rowLower = new double[n];
+                foreach (var (varKey, coef) in constr.Coefficients)
+                    rowLower[varIndices[varKey]] = coef;
+                AddRow(rowLower, double.IsNegativeInfinity(constr.LowerBound) ? 0.0 : constr.LowerBound);
 
-        int rowOffset = baseM;
-        foreach (var v in Variables)
-        {
-            if (!double.IsPositiveInfinity(v.UpperBound))
-            {
-                int varIndex = varIndices[v];
-                Adata[rowOffset, varIndex] = -1.0;
-                bvals[rowOffset] = -v.UpperBound;
-                rowOffset++;
-            }
-        }
-        foreach (var c in Constraints)
-        {
-            if (!double.IsPositiveInfinity(c.UpperBound))
-            {
-                foreach (var kvp in c.Coefficients)
+                // Constraint upper bounds.
+                if (!double.IsPositiveInfinity(constr.UpperBound))
                 {
-                    int idx = varIndices[kvp.Key];
-                    Adata[rowOffset, idx] = -kvp.Value;
+                    var rowUpper = new double[n];
+                    foreach (var (v, coef) in constr.Coefficients)
+                        rowUpper[varIndices[v]] = -coef;
+                    AddRow(rowUpper, -constr.UpperBound);
                 }
-                bvals[rowOffset] = -c.UpperBound;
-                rowOffset++;
             }
-        }
 
-        const int maxIter = 1000;
-        int iterations = 0;
-
-        // Initialize x with 1's.
-        var solution = Enumerable.Repeat(1.0, n).ToArray();
-
-        // Barrier method parameters.
-        double t = 1.0;         // initial scaling parameter
-        double mu = 2.0;        // factor to increase t
-        int innerIter = 50;     // inner iterations
-
-        // Local function to compute the residual for a constraint row.
-        double Residual(int i, double[] x)
-        {
-            double r = -bvals[i];
-            for (int j = 0; j < n; j++)
+            // Variable upper bounds.
+            foreach (var v in Variables)
             {
-                r += Adata[i, j] * x[j];
+                if (!double.IsPositiveInfinity(v.UpperBound))
+                {
+                    var row = new double[n];
+                    row[varIndices[v]] = -1.0;
+                    AddRow(row, -v.UpperBound);
+                }
             }
-            return r;
+
+        var Adata = Matrix<double>.Build.DenseOfRowArrays(rows);
+        var bvals = Vector<double>.Build.DenseOfEnumerable(rhs);
+        int m = Adata.RowCount;
+
+        // Build objective vector.
+        double sign = Objective.IsMinimization ? 1.0 : -1.0;
+        var cVec = Vector<double>.Build.Dense(n, i => 0.0);
+        foreach (var (variable, coeff) in Objective.Coefficients)
+            cVec[varIndices[variable]] = sign * coeff;
+
+        // Define barrier method parameters.
+        double t = 1.0, mu = 2.0;
+        const int maxIter = 1000, innerIter = 50;
+        var x = Vector<double>.Build.Dense(n, 1.0);
+        _iterations = 0;
+
+        // Reuse a single vector to hold intermediate calculations
+        var res = Vector<double>.Build.Dense(m);
+
+        double BarrierValue(Vector<double> xVal)
+        {
+            Adata.Multiply(xVal, res);
+            res.Subtract(bvals, res);
+            for (int i = 0; i < m; i++)
+                if (res[i] <= 0.0) return double.PositiveInfinity;
+
+            double sumLog = 0.0;
+            for (int i = 0; i < m; i++)
+                sumLog += Math.Log(res[i]);
+
+            return t * cVec.DotProduct(xVal) - sumLog;
         }
 
-        double BarrierValue(double[] xVec)
+        Vector<double>? ComputeGradient(Vector<double> xVal)
         {
-            double sum = 0.0;
+            Adata.Multiply(xVal, res);
+            res.Subtract(bvals, res);
+            for (int i = 0; i < m; i++)
+                if (res[i] <= 0.0) return null;
+
+            var grad = cVec.Clone();
+            grad.Multiply(t, grad);
             for (int i = 0; i < m; i++)
             {
-                double diff = Residual(i, xVec);
-                if (diff <= 0)
-                    return double.PositiveInfinity;
-                sum -= Math.Log(diff);
+                double inv = -1.0 / res[i];
+                for (int j = 0; j < n; j++)
+                    grad[j] += Adata[i, j] * inv;
             }
-            double obj = 0.0;
-            for (int j = 0; j < n; j++)
-                obj += cVec[j] * xVec[j];
-            return t * obj + sum;
+            return grad;
         }
 
-        var candidate = new double[n];
-
-        // Optimize the barrier function with backtracking line search.
-        while (iterations < maxIter && m / t >= Tolerance)
+        // Main barrier method loop.
+        while (_iterations < maxIter && m / t >= Tolerance)
         {
-            for (int inner = 0; inner < innerIter; inner++)
+            for (int i = 0; i < innerIter; i++)
             {
-                iterations++;
-                bool feasible = true;
-                var grad = new double[n];
-                for (int i = 0; i < m; i++)
-                {
-                    double residual = Residual(i, solution);
-                    if (residual <= 0)
-                    {
-                        feasible = false;
-                        break;
-                    }
-                    for (int j = 0; j < n; j++)
-                        grad[j] += -Adata[i, j] / residual;
-                }
-                if (!feasible)
+                _iterations++;
+                var grad = ComputeGradient(x);
+                if (grad == null || grad.L2Norm() < Tolerance)
                     break;
 
-                // Compute gradient norm and add contribution from the objective.
-                double norm = 0;
-                for (int j = 0; j < n; j++)
+                double step = 1.0;
+                double currVal = BarrierValue(x);
+                while (step >= MinStepSize)
                 {
-                    grad[j] += t * cVec[j];
-                    norm += grad[j] * grad[j];
-                }
-                norm = Math.Sqrt(norm);
-                if (norm < Tolerance) break;
-
-                // Backtracking line search parameters.
-                double stepSize = 1.0;
-                double alpha = 0.25;
-                double beta = 0.5;
-
-                // Compute current barrier value using the helper function.
-                double currentVal = BarrierValue(solution);
-
-                // Determine step size that gives sufficient decrease.
-                while (true)
-                {
-                    double improvement = 0.0;
-                    for (int j = 0; j < n; j++)
+                    var candidate = (x - step * grad)
+                        .PointwiseMaximum(Vector<double>.Build.Dense(n, LowerBoundThreshold));
+                    if (BarrierValue(candidate) <= currVal + 0.25 * grad.DotProduct(candidate - x))
                     {
-                        double newVal = Math.Max(solution[j] - stepSize * grad[j], LowerBoundThreshold);
-                        improvement += grad[j] * (newVal - solution[j]);
-                        candidate[j] = newVal;
-                    }
-                    
-                    double candidateVal = BarrierValue(candidate);
-                    
-                    if (candidateVal <= currentVal + alpha * improvement)
+                        x = candidate;
                         break;
-                    stepSize *= beta;
-                    if (stepSize < MinStepSize)
-                        break; // prevent too small steps.
+                    }
+                    step *= 0.5;
                 }
-
-                // Update solution.
-                Array.Copy(candidate, solution, n);
             }
-            t *= mu; // Increase barrier weight.
+            t *= mu;
         }
 
-        _iterations = iterations;
-
-        for (int j = 0; j < baseN; j++)
-            Variables[j].Solution = Math.Abs(solution[j]) < Tolerance ? 0.0 : solution[j];
+        // Assign solution to each variable.
+        for (int j = 0; j < n; j++)
+            Variables[j].Solution = Math.Abs(x[j]) < Tolerance ? 0.0 : x[j];
 
         _wallTime = (DateTime.UtcNow - startTime).TotalSeconds;
 
@@ -233,25 +180,8 @@ public class LinearProgrammingSolver : ISolver
     public int NumVariables() => Variables.Count;
     public int NumConstraints() => Constraints.Count;
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposedValue)
-        {
-            if (disposing)
-            {
-                // TODO: dispose managed state (managed objects)
-            }
-
-            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-            // TODO: set large fields to null
-            disposedValue = true;
-        }
-    }
-
     public void Dispose()
     {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
+        // Do nothing.
     }
 }
