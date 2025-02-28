@@ -160,16 +160,19 @@ public sealed class LinearProgrammingSolver : ISolver
                 iterations++;
                 bool feasible = true;
                 var grad = new double[n];
+                
+                // Cache residuals to avoid recomputing them
+                var residuals = new double[m];
                 for (int i = 0; i < m; i++)
                 {
-                    double residual = Residual(i, solution);
-                    if (residual <= 0)
+                    residuals[i] = Residual(i, solution);
+                    if (residuals[i] <= 0)
                     {
                         feasible = false;
                         break;
                     }
                     for (int j = 0; j < n; j++)
-                        grad[j] += -Adata[i, j] / residual;
+                        grad[j] += -Adata[i, j] / residuals[i];
                 }
                 if (!feasible)
                     break;
