@@ -2,6 +2,9 @@ namespace StiglerDiet.Solvers;
 
 using MathNet.Numerics.LinearAlgebra;
 using StiglerDiet.Solvers.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 /// <summary>
 /// Glop-style barrier method solver
@@ -59,34 +62,34 @@ public class LinearProgrammingSolver : ISolver
             rhs.Add(bound);
         }
 
-            // User-defined constraints.
-            foreach (var constr in Constraints)
-            {
-                var rowLower = new double[n];
-                foreach (var (varKey, coef) in constr.Coefficients)
-                    rowLower[varIndices[varKey]] = coef;
-                AddRow(rowLower, double.IsNegativeInfinity(constr.LowerBound) ? 0.0 : constr.LowerBound);
+        // User-defined constraints.
+        foreach (var constr in Constraints)
+        {
+            var rowLower = new double[n];
+            foreach (var (varKey, coef) in constr.Coefficients)
+                rowLower[varIndices[varKey]] = coef;
+            AddRow(rowLower, double.IsNegativeInfinity(constr.LowerBound) ? 0.0 : constr.LowerBound);
 
-                // Constraint upper bounds.
-                if (!double.IsPositiveInfinity(constr.UpperBound))
-                {
-                    var rowUpper = new double[n];
-                    foreach (var (v, coef) in constr.Coefficients)
-                        rowUpper[varIndices[v]] = -coef;
-                    AddRow(rowUpper, -constr.UpperBound);
-                }
-            }
-
-            // Variable upper bounds.
-            foreach (var v in Variables)
+            // Constraint upper bounds.
+            if (!double.IsPositiveInfinity(constr.UpperBound))
             {
-                if (!double.IsPositiveInfinity(v.UpperBound))
-                {
-                    var row = new double[n];
-                    row[varIndices[v]] = -1.0;
-                    AddRow(row, -v.UpperBound);
-                }
+                var rowUpper = new double[n];
+                foreach (var (v, coef) in constr.Coefficients)
+                    rowUpper[varIndices[v]] = -coef;
+                AddRow(rowUpper, -constr.UpperBound);
             }
+        }
+
+        // Variable upper bounds.
+        foreach (var v in Variables)
+        {
+            if (!double.IsPositiveInfinity(v.UpperBound))
+            {
+                var row = new double[n];
+                row[varIndices[v]] = -1.0;
+                AddRow(row, -v.UpperBound);
+            }
+        }
 
         var Adata = Matrix<double>.Build.DenseOfRowArrays(rows);
         var bvals = Vector<double>.Build.DenseOfEnumerable(rhs);
@@ -104,60 +107,79 @@ public class LinearProgrammingSolver : ISolver
         var x = Vector<double>.Build.Dense(n, 1.0);
         _iterations = 0;
 
-        // Reuse a single vector to hold intermediate calculations
-        var res = Vector<double>.Build.Dense(m);
+        // Reuse vectors to hold intermediate calculations
+        var slacks = Vector<double>.Build.Dense(m);
+        var candidate = Vector<double>.Build.Dense(n);
+        var lbThresholdVector = Vector<double>.Build.Dense(n, LowerBoundThreshold);
 
-        double BarrierValue(Vector<double> xVal)
+        // Pre-compute slacks (Ax - b) to avoid redundant matrix-vector multiplication
+        void ComputeSlacks(Vector<double> xVal, Vector<double> result)
         {
-            Adata.Multiply(xVal, res);
-            res.Subtract(bvals, res);
+            Adata.Multiply(xVal, result);
+            result.Subtract(bvals, result);
+        }
+
+        double BarrierValue(Vector<double> xVal, Vector<double> slack)
+        {
             for (int i = 0; i < m; i++)
-                if (res[i] <= 0.0) return double.PositiveInfinity;
+                if (slack[i] <= 0.0) return double.PositiveInfinity;
 
             double sumLog = 0.0;
             for (int i = 0; i < m; i++)
-                sumLog += Math.Log(res[i]);
+                sumLog += Math.Log(slack[i]);
 
             return t * cVec.DotProduct(xVal) - sumLog;
         }
 
-        Vector<double>? ComputeGradient(Vector<double> xVal)
+        Vector<double>? ComputeGradient(Vector<double> slack, Vector<double> result)
         {
-            Adata.Multiply(xVal, res);
-            res.Subtract(bvals, res);
             for (int i = 0; i < m; i++)
-                if (res[i] <= 0.0) return null;
+                if (slack[i] <= 0.0) return null;
 
-            var grad = cVec.Clone();
-            grad.Multiply(t, grad);
+            cVec.CopyTo(result);
+            result.Multiply(t, result);
+            
             for (int i = 0; i < m; i++)
             {
-                double inv = -1.0 / res[i];
+                double inv = -1.0 / slack[i];
                 for (int j = 0; j < n; j++)
-                    grad[j] += Adata[i, j] * inv;
+                    result[j] += Adata[i, j] * inv;
             }
-            return grad;
+            return result;
         }
 
         // Main barrier method loop.
+        var grad = Vector<double>.Build.Dense(n);
         while (_iterations < maxIter && m / t >= Tolerance)
         {
             for (int i = 0; i < innerIter; i++)
             {
                 _iterations++;
-                var grad = ComputeGradient(x);
-                if (grad == null || grad.L2Norm() < Tolerance)
+                
+                // Compute slacks once per iteration
+                ComputeSlacks(x, slacks);
+                
+                // Compute gradient using the already computed slacks
+                if (ComputeGradient(slacks, grad) == null || grad.L2Norm() < Tolerance)
                     break;
 
                 double step = 1.0;
-                double currVal = BarrierValue(x);
+                double currVal = BarrierValue(x, slacks);
+                
                 while (step >= MinStepSize)
                 {
-                    var candidate = (x - step * grad)
-                        .PointwiseMaximum(Vector<double>.Build.Dense(n, LowerBoundThreshold));
-                    if (BarrierValue(candidate) <= currVal + 0.25 * grad.DotProduct(candidate - x))
+                    // Avoid creating new vectors in the loop
+                    x.Subtract(step * grad, candidate);
+                    candidate.PointwiseMaximum(lbThresholdVector, candidate);
+                    
+                    // Recompute slacks for the candidate
+                    ComputeSlacks(candidate, slacks);
+                    double candidateVal = BarrierValue(candidate, slacks);
+                    
+                    if (candidateVal <= currVal + 0.25 * step * grad.DotProduct(candidate.Subtract(x)))
                     {
-                        x = candidate;
+                        // Copy candidate to x
+                        candidate.CopyTo(x);
                         break;
                     }
                     step *= 0.5;
