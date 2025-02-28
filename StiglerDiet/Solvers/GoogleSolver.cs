@@ -8,7 +8,7 @@ using static Google.OrTools.LinearSolver.Solver;
 /// <summary>
 /// Linear Programming Solver.
 /// </summary>
-public class GoogleSolver : ISolver
+public sealed class GoogleSolver : ISolver
 {
     private readonly Solver _solver = new("StiglerDietSolver", OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
 
