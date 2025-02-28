@@ -8,16 +8,17 @@ This is a more fleshed out version of [Google's implementation](https://develope
 
 The following improvements have been made:
 
-- Add unit tests
-- Use strongly-typed objects
+- Native .NET implementation of linear optimization algorithm
+- Added unit tests
+- Uses strongly-typed objects
 - Refactored to be idempotent and segregate console logging from computation
-- Enable easily swapping in your own data set
+- Enabled easily swapping in your own dataset
 - Standardized the 1939 data from cents to dollars
 - Corrected the 1939 data's erroneous use of kcals by multiplying everything by a thousand, since calories and kcals are really the same.
-- Correctly report the quantities and units
-- Compute % of RDA
-- Show daily totals
-- Pretty printed the results as tables
+- Correctly reports the quantities and units
+- Computes % of RDA
+- Shows daily totals
+- Pretty prints the results as tables
 
 ## Sample Output
 
