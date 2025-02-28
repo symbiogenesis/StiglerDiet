@@ -12,26 +12,34 @@ public class StiglerDietProgram
 {
     static void Main()
     {
-        ISolver solver;
+        using ISolver solver = GetSolver();
 
-        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-        {
-            solver = new LinearProgrammingSolver();
-        }
-        else
-        {
-            solver = new GoogleSolver();
-        }
+        // Load data from CSV files
+        var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
+        var foodItems = CsvParser.LoadFoodItems();
 
-        using (solver)
-        {        
-            // Load data from CSV files
-            var minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
-            var foodItems = CsvParser.LoadFoodItems();
-            
+        try
+        {
             var optimalDailyDiet = FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
 
             LogResults(solver, optimalDailyDiet, minimumDailyAllowance);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            return;
+        }
+    }
+
+    private static ISolver GetSolver()
+    {
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            return new LinearProgrammingSolver();
+        }
+        else
+        {
+            return new GoogleSolver();
         }
     }
 
