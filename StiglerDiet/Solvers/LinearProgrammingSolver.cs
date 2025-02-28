@@ -19,6 +19,11 @@ public class LinearProgrammingSolver : ISolver
     private const int MaxIterations = 1000;
     private const int InnerIterations = 50;
 
+    private static readonly int processorCount = Environment.ProcessorCount;
+    private readonly ParallelOptions _parallelOptions = new() { MaxDegreeOfParallelism = processorCount };
+    private readonly ParallelOptions _lightParallelOptions = new() { MaxDegreeOfParallelism = Math.Max(1, processorCount / 2) };
+
+
     public List<Variable> Variables { get; } = [];
     public List<Constraint> Constraints { get; } = [];
     public Objective Objective { get; } = new();
@@ -133,7 +138,7 @@ public class LinearProgrammingSolver : ISolver
             
         return objVector;
     }
-    
+
     private Vector<double> SolveWithBarrierMethod(Matrix<double> A, Vector<double> b, Vector<double> c)
     {
         int n = c.Count;
@@ -147,6 +152,7 @@ public class LinearProgrammingSolver : ISolver
         var grad = Vector<double>.Build.Dense(n);
         var candidate = Vector<double>.Build.Dense(n);
         var lbVector = Vector<double>.Build.Dense(n, LowerBoundThreshold);
+        var tempSlacks = Vector<double>.Build.Dense(m); // Preallocate the temporary vector here
         _iterations = 0;
         
         // Main barrier method loop
@@ -170,7 +176,7 @@ public class LinearProgrammingSolver : ISolver
                     break;
                 
                 // Line search and update x
-                double step = PerformLineSearch(x, grad, slacks, A, b, c, t, candidate, lbVector);
+                double step = PerformLineSearch(x, grad, slacks, A, b, c, t, candidate, lbVector, tempSlacks);
                 if (step < MinStepSize)
                     break;
                 
@@ -184,193 +190,13 @@ public class LinearProgrammingSolver : ISolver
         return x;
     }
 
-    private static void ComputeSlacks(Matrix<double> A, Vector<double> x, Vector<double> b, Vector<double> slacks)
-    {
-        A.Multiply(x, slacks);
-        slacks.Subtract(b, slacks);
-    }
-
-    private static bool AreSlacksPositive(Vector<double> slacks)
-    {
-        for (int i = 0; i < slacks.Count; i++)
-        {
-            if (slacks[i] <= 0.0)
-                return false;
-        }
-        return true;
-    }
-
-    private static void ComputeGradient(Matrix<double> A, Vector<double> c, Vector<double> slacks, 
-                                    double t, Vector<double> grad)
-    {
-        // Initialize gradient with objective
-        c.CopyTo(grad);
-        grad.Multiply(t, grad);
-        
-        int slackCount = slacks.Count;
-        int gradCount = grad.Count;
-        
-        // Pre-compute all slack inverses once (major optimization)
-        var invSlacks = new double[slackCount];
-        for (int j = 0; j < slackCount; j++)
-            invSlacks[j] = -1.0 / slacks[j];
-        
-        // Specialized fast path for dense column-major storage
-        if (A.Storage is MathNet.Numerics.LinearAlgebra.Storage.DenseColumnMajorMatrixStorage<double> denseCMStorage)
-        {
-            // Access underlying storage directly when possible
-            try
-            {
-                var data = denseCMStorage.Data;
-                var invSlacksVector = Vector<double>.Build.Dense(invSlacks);
-                
-                if (slackCount > 100 && gradCount > 100)
-                {
-                    // For very large matrices, use built-in matrix operations
-                    var ATinvSlacks = A.TransposeThisAndMultiply(invSlacksVector);
-                    grad.Add(ATinvSlacks, grad);
-                    return;
-                }
-                else
-                {
-                    // For medium-sized problems, use direct memory access with SIMD optimization
-                    int vectorSize = System.Numerics.Vector<double>.Count;
-                    
-                    // Process columns in the optimal order for memory access
-                    Parallel.For(0, gradCount, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, k =>
-                    {
-                        double sum = 0.0;
-                        int colOffset = k * slackCount;
-                        int j = 0;
-                        
-                        // Use SIMD vectorization where possible
-                        for (; j + vectorSize <= slackCount; j += vectorSize)
-                        {
-                            var matrixVec = new System.Numerics.Vector<double>(data, colOffset + j);
-                            var slackVec = new System.Numerics.Vector<double>(invSlacks, j);
-                            sum += System.Numerics.Vector.Dot(matrixVec, slackVec);
-                        }
-                        
-                        // Handle remainder
-                        for (; j < slackCount; j++)
-                            sum += data[colOffset + j] * invSlacks[j];
-                            
-                        grad[k] += sum;
-                    });
-                    return;
-                }
-            }
-            catch
-            {
-                // Fall back if direct access fails
-            }
-        }
-        
-        // Choose best strategy based on problem dimensions and hardware
-        int processorCount = Environment.ProcessorCount;
-        bool useParallel = Math.Max(slackCount, gradCount) > 1000 || (slackCount * gradCount > 100000);
-        int optimalChunkSize = Math.Min(16, System.Numerics.Vector<double>.Count * 2); // Optimize chunk size
-        
-        if (slackCount > gradCount * 2)
-        {
-            // Column-first traversal (better when slacks >> variables)
-            if (useParallel)
-            {
-                Parallel.For(0, gradCount, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, k =>
-                {
-                    double sum = 0.0;
-                    int j = 0;
-                    
-                    // Process in optimal vector-friendly chunks
-                    for (; j + optimalChunkSize - 1 < slackCount; j += optimalChunkSize)
-                    {
-                        double chunkSum = 0.0;
-                        for (int offset = 0; offset < optimalChunkSize; offset++)
-                            chunkSum += A[j + offset, k] * invSlacks[j + offset];
-                        sum += chunkSum;
-                    }
-                    
-                    // Handle remaining elements
-                    for (; j < slackCount; j++)
-                        sum += A[j, k] * invSlacks[j];
-                        
-                    grad[k] += sum;
-                });
-            }
-            else
-            {
-                // Sequential version for smaller problems
-                for (int k = 0; k < gradCount; k++)
-                {
-                    double sum = 0.0;
-                    for (int j = 0; j < slackCount; j++)
-                        sum += A[j, k] * invSlacks[j];
-                    grad[k] += sum;
-                }
-            }
-        }
-        else
-        {
-            // Row-first traversal (better when variables ≈ slacks or variables > slacks)
-            int j = 0;
-            for (; j + optimalChunkSize - 1 < slackCount; j += optimalChunkSize)
-            {
-                // Prefetch inverse slack values for better cache locality
-                double[] localInvSlacks = new double[optimalChunkSize];
-                for (int idx = 0; idx < optimalChunkSize; idx++)
-                    localInvSlacks[idx] = invSlacks[j + idx];
-                
-                if (useParallel && gradCount > processorCount * 4)
-                {
-                    Parallel.For(0, gradCount, new ParallelOptions { MaxDegreeOfParallelism = processorCount }, k =>
-                    {
-                        double sum = 0.0;
-                        for (int idx = 0; idx < optimalChunkSize; idx++)
-                            sum += A[j + idx, k] * localInvSlacks[idx];
-                        
-                        // Thread-safe update
-                        lock (grad)
-                        {
-                            grad[k] += sum;
-                        }
-                    });
-                }
-                else
-                {
-                    for (int k = 0; k < gradCount; k++)
-                    {
-                        double sum = 0.0;
-                        for (int idx = 0; idx < optimalChunkSize; idx++)
-                            sum += A[j + idx, k] * localInvSlacks[idx];
-                        grad[k] += sum;
-                    }
-                }
-            }
-            
-            // Handle remaining rows
-            for (; j < slackCount; j++)
-            {
-                double is0 = invSlacks[j];
-                for (int k = 0; k < gradCount; k++)
-                    grad[k] += A[j, k] * is0;
-            }
-        }
-    }
-
-    private static void UpdateSolution(Vector<double> x, Vector<double> grad, double step,
-                                      Vector<double> lbVector, Vector<double> result)
-    {
-        x.Subtract(step * grad, result);
-        result.PointwiseMaximum(lbVector, result);
-    }
-    
-    private static double PerformLineSearch(Vector<double> x, Vector<double> grad, Vector<double> slacks, 
-                                          Matrix<double> A, Vector<double> b, Vector<double> c, double t,
-                                          Vector<double> candidate, Vector<double> lbVector)
+    private double PerformLineSearch(Vector<double> x, Vector<double> grad, Vector<double> slacks, 
+                                        Matrix<double> A, Vector<double> b, Vector<double> c, double t,
+                                        Vector<double> candidate, Vector<double> lbVector, Vector<double> tempSlacks)
     {
         double step = 1.0;
         double currentValue = ComputeBarrierValue(x, slacks, c, t);
-        var tempSlacks = Vector<double>.Build.Dense(slacks.Count);
+        // Reuse the preallocated vector instead of creating a new one
         
         while (step >= MinStepSize)
         {
@@ -394,10 +220,203 @@ public class LinearProgrammingSolver : ISolver
         
         return 0.0;
     }
-    
-    private static double ComputeBarrierValue(Vector<double> x, Vector<double> slacks, Vector<double> c, double t)
+
+    private static void ComputeSlacks(Matrix<double> A, Vector<double> x, Vector<double> b, Vector<double> slacks)
     {
-        return t * c.DotProduct(x) - slacks.PointwiseLog().Sum();
+        A.Multiply(x, slacks);
+        slacks.Subtract(b, slacks);
+    }
+
+    private static bool AreSlacksPositive(Vector<double> slacks)
+    {
+        int count = slacks.Count;
+        int i = 0;
+        
+        // Get direct access to data if possible
+        if (slacks.Storage is MathNet.Numerics.LinearAlgebra.Storage.DenseVectorStorage<double> denseStorage)
+        {
+            double[] data = denseStorage.Data;
+            
+            // Process in chunks for better cache utilization
+            const int chunkSize = 128;
+            for (; i + chunkSize <= count; i += chunkSize)
+            {
+                for (int j = 0; j < chunkSize; j++)
+                {
+                    if (data[i + j] <= 0.0)
+                        return false;
+                }
+            }
+            
+            // Handle remaining elements
+            for (; i < count; i++)
+            {
+                if (data[i] <= 0.0)
+                    return false;
+            }
+        }
+        else
+        {
+            // Fallback for non-dense storage
+            for (i = 0; i < count; i++)
+            {
+                if (slacks[i] <= 0.0)
+                    return false;
+            }
+        }
+        
+        return true;
+    }
+
+    private void ComputeGradient(Matrix<double> A, Vector<double> c, Vector<double> slacks,
+                                    double t, Vector<double> grad)
+    {
+        // Initialize gradient with objective
+        c.CopyTo(grad);
+        grad.Multiply(t, grad);
+
+        int slackCount = slacks.Count;
+        int gradCount = grad.Count;
+
+        // Pre-compute all slack inverses once (major optimization)
+        var invSlacks = new double[slackCount];
+        for (int j = 0; j < slackCount; j++)
+            invSlacks[j] = -1.0 / slacks[j];
+
+        // Attempt direct access to matrix data for maximum performance
+        if (A.Storage is MathNet.Numerics.LinearAlgebra.Storage.DenseColumnMajorMatrixStorage<double> denseCMStorage)
+        {
+            try
+            {
+                var data = denseCMStorage.Data;
+                int vectorSize = System.Numerics.Vector<double>.Count;
+
+                // Parallelize the outer loop (gradient elements)
+                Parallel.For(0, gradCount, _parallelOptions, k =>
+                {
+                    double sum = 0.0;
+                    int colOffset = k * slackCount; // Offset for the current column
+
+                    // Use SIMD vectorization within the inner loop
+                    int j = 0;
+                    for (; j <= slackCount - vectorSize; j += vectorSize)
+                    {
+                        var matrixVec = new System.Numerics.Vector<double>(data, colOffset + j);
+                        var slackVec = new System.Numerics.Vector<double>(invSlacks, j);
+                        sum += System.Numerics.Vector.Dot(matrixVec, slackVec);
+                    }
+
+                    // Handle remaining elements (if slackCount is not a multiple of vectorSize)
+                    for (; j < slackCount; j++)
+                    {
+                        sum += data[colOffset + j] * invSlacks[j];
+                    }
+
+                    grad[k] += sum;
+                });
+                return; // Exit after successful SIMD processing
+            }
+            catch
+            {
+                // Fallback if direct access fails
+            }
+        }
+
+        // Fallback: If direct access is not possible, use the original logic (or a simplified version)
+        for (int k = 0; k < gradCount; k++)
+        {
+            double sum = 0.0;
+            for (int j = 0; j < slackCount; j++)
+            {
+                sum += A[j, k] * invSlacks[j];
+            }
+            grad[k] += sum;
+        }
+    }
+
+    private static void UpdateSolution(Vector<double> x, Vector<double> grad, double step,
+                                      Vector<double> lbVector, Vector<double> result)
+    {
+        x.Subtract(step * grad, result);
+        result.PointwiseMaximum(lbVector, result);
+    }
+
+    private double ComputeBarrierValue(Vector<double> x, Vector<double> slacks, Vector<double> c, double t)
+    {
+        double objectiveTerm = t * c.DotProduct(x);
+        double barrierTerm = 0.0;
+        int m = slacks.Count;
+        
+        // Check if we can use direct data access for slacks
+        if (slacks.Storage is MathNet.Numerics.LinearAlgebra.Storage.DenseVectorStorage<double> denseSlacks)
+        {
+            double[] slackData = denseSlacks.Data;
+            
+            // For large problems, use parallel processing with chunking
+            if (m > 500)
+            {
+                int chunkSize = 512;
+                int chunks = (m + chunkSize - 1) / chunkSize;
+                double[] partialSums = new double[chunks];
+                
+                Parallel.For(0, chunks, _lightParallelOptions, chunkIndex =>
+                {
+                    int start = chunkIndex * chunkSize;
+                    int end = Math.Min(start + chunkSize, m);
+                    double localSum = 0.0;
+                    
+                    for (int i = start; i < end; i++)
+                    {
+                        // Fast path using direct array access
+                        localSum -= Math.Log(slackData[i]);
+                    }
+                    
+                    partialSums[chunkIndex] = localSum;
+                });
+                
+                // Sum up partial results
+                for (int i = 0; i < chunks; i++)
+                    barrierTerm += partialSums[i];
+            }
+            else
+            {
+                // Sequential processing for small problems
+                for (int i = 0; i < m; i++)
+                    barrierTerm -= Math.Log(slackData[i]);
+            }
+        }
+        else
+        {
+            // Fallback for non-dense storage
+            if (m > 500)
+            {
+                int chunkSize = 512;
+                int chunks = (m + chunkSize - 1) / chunkSize;
+                double[] partialSums = new double[chunks];
+                
+                Parallel.For(0, chunks, chunkIndex =>
+                {
+                    int start = chunkIndex * chunkSize;
+                    int end = Math.Min(start + chunkSize, m);
+                    double localSum = 0.0;
+                    
+                    for (int i = start; i < end; i++)
+                        localSum -= Math.Log(slacks[i]);
+                    
+                    partialSums[chunkIndex] = localSum;
+                });
+                
+                for (int i = 0; i < chunks; i++)
+                    barrierTerm += partialSums[i];
+            }
+            else
+            {
+                for (int i = 0; i < m; i++)
+                    barrierTerm -= Math.Log(slacks[i]);
+            }
+        }
+        
+        return objectiveTerm + barrierTerm;
     }
 
     public double WallTime() => _wallTime;
