@@ -200,7 +200,8 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                     double improvement = 0.0;
                     for (int j = 0; j < n; j++)
                     {
-                        double newVal = Math.Max(solution[j] - stepSize * grad[j], LowerBoundThreshold);
+                        double step = stepSize * grad[j];
+                        double newVal = Math.Max(solution[j] - step, LowerBoundThreshold);
                         improvement += grad[j] * (newVal - solution[j]);
                         candidate[j] = newVal;
                     }
@@ -212,7 +213,7 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                     stepSize *= beta;
                     if (stepSize < MinStepSize)
                         break; // prevent too small steps.
-    }
+                }
 
                 // Update solution.
                 Array.Copy(candidate, solution, n);
