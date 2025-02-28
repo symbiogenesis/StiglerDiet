@@ -2,6 +2,7 @@ namespace StiglerDiet.Solvers;
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using StiglerDiet.Solvers.Interfaces;
 
 /// <summary>
@@ -36,14 +37,14 @@ public sealed class LinearProgrammingSolver : ISolver
 
     public ResultStatus Solve()
     {
-        var startTime = DateTime.UtcNow;
+        var startTime = Stopwatch.GetTimestamp();
 
         int baseM = Constraints.Count;
         int baseN = Variables.Count;
 
         if (baseM == 0 || baseN == 0)
         {
-            _wallTime = (DateTime.UtcNow - startTime).TotalSeconds;
+            _wallTime = Stopwatch.GetElapsedTime(startTime).TotalSeconds;
             return ResultStatus.INFEASIBLE;
         }
 
@@ -222,7 +223,7 @@ public sealed class LinearProgrammingSolver : ISolver
         for (int j = 0; j < baseN; j++)
             Variables[j].Solution = Math.Abs(solution[j]) < Tolerance ? 0.0 : solution[j];
 
-        _wallTime = (DateTime.UtcNow - startTime).TotalSeconds;
+        _wallTime = Stopwatch.GetElapsedTime(startTime).TotalSeconds;
 
         return ResultStatus.OPTIMAL;
     }
