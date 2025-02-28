@@ -7,11 +7,10 @@ using StiglerDiet.Solvers.Interfaces;
 /// <summary>
 /// Glop-style barrier method solver
 /// </summary>
-public class LinearProgrammingSolver : ISolver
+public sealed class LinearProgrammingSolver : ISolver
 {
     private double _wallTime = 0.0;
     private int _iterations = 0;
-    private bool disposedValue;
 
     private const double Tolerance = 1e-7;
     private const double LowerBoundThreshold = 1e-9;
@@ -233,25 +232,7 @@ public class LinearProgrammingSolver : ISolver
     public int NumVariables() => Variables.Count;
     public int NumConstraints() => Constraints.Count;
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposedValue)
-        {
-            if (disposing)
-            {
-                // TODO: dispose managed state (managed objects)
-            }
-
-            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-            // TODO: set large fields to null
-            disposedValue = true;
-        }
-    }
-
     public void Dispose()
     {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
     }
 }
