@@ -133,12 +133,12 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
             return r;
         }
 
-        double BarrierValue(double[] xVec)
+        double BarrierValue(double[] xVec, double[]? precomputedResiduals = null)
         {
             double sum = 0.0;
             for (int i = 0; i < m; i++)
             {
-                double diff = Residual(i, xVec);
+                double diff = precomputedResiduals != null ? precomputedResiduals[i] : Residual(i, xVec);
                 if (diff <= 0)
                     return double.PositiveInfinity;
                 sum -= Math.Log(diff);
@@ -192,7 +192,7 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                 double beta = 0.5;
 
                 // Compute current barrier value using the helper function.
-                double currentVal = BarrierValue(solution);
+                double currentVal = BarrierValue(solution, residuals);
 
                 // Determine step size that gives sufficient decrease.
                 while (true)
@@ -212,7 +212,7 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                     stepSize *= beta;
                     if (stepSize < MinStepSize)
                         break; // prevent too small steps.
-                }
+    }
 
                 // Update solution.
                 Array.Copy(candidate, solution, n);
