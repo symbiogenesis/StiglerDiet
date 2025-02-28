@@ -12,13 +12,25 @@ public sealed class GoogleSolver : ISolver
 {
     private readonly Solver _solver = new("StiglerDietSolver", OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
 
-    private List<Variable>? _variables;
-    private List<Constraint>? _constraints;
-    private Objective? _objective;
+    public List<Variable> Variables => _solver.variables().Select(v => new Variable(v.Name(), v.Lb(), v.Ub())).ToList();
+    public List<Constraint> Constraints => _solver.constraints().Select(c => new Constraint(c.Name(), c.Lb(), c.Ub())).ToList();
+    public Objective Objective
+    {
+        get
+        {
+            var objective = _solver.Objective();
 
-    public List<Variable> Variables => _variables ??= GetVariables();
-    public List<Constraint> Constraints => _constraints ??= GetConstraints();
-    public Objective Objective => _objective ??= GetObjective();
+            Dictionary<Variable, double> coefficients = [];
+
+            foreach (var v in _solver.variables())
+            {
+                var coefficient = objective.GetCoefficient(v);
+                coefficients.Add(new(v.Name(), v.Lb(), v.Ub()), coefficient);
+            }
+
+            return new(coefficients, objective.Minimization()); 
+        }
+    }
 
     public Variable MakeNumVar(double lb, double ub, string name)
     {
@@ -35,10 +47,6 @@ public sealed class GoogleSolver : ISolver
     public ResultStatus Solve()
     {
         var result = _solver.Solve();
-
-        _variables = GetVariables();
-        _constraints = GetConstraints();
-        _objective = GetObjective();
 
         return result switch
         {
@@ -59,23 +67,5 @@ public sealed class GoogleSolver : ISolver
     public void Dispose()
     {
         _solver.Dispose();
-    }
-
-    
-    private List<Variable> GetVariables() => _solver.variables().Select(v => new Variable(v.Name(), v.Lb(), v.Ub())).ToList();
-    private List<Constraint> GetConstraints() => _solver.constraints().Select(c => new Constraint(c.Name(), c.Lb(), c.Ub())).ToList();
-    private Objective GetObjective()
-    {
-        var objective = _solver.Objective();
-
-        Dictionary<Variable, double> coefficients = [];
-
-        foreach (var v in _solver.variables())
-        {
-            var coefficient = objective.GetCoefficient(v);
-            coefficients.Add(new(v.Name(), v.Lb(), v.Ub()), coefficient);
-        }
-
-        return new(coefficients, objective.Minimization()); 
     }
 }
