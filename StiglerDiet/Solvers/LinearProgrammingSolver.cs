@@ -8,7 +8,7 @@ using StiglerDiet.Solvers.Interfaces;
 /// <summary>
 /// Glop-style barrier method solver
 /// </summary>
-public sealed class LinearProgrammingSolver : ISolver
+public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
 {
     private double _wallTime = 0.0;
     private int _iterations = 0;
@@ -112,7 +112,6 @@ public sealed class LinearProgrammingSolver : ISolver
             }
         }
 
-        const int maxIter = 1000;
         int iterations = 0;
 
         // Initialize x with 1's.
@@ -153,7 +152,7 @@ public sealed class LinearProgrammingSolver : ISolver
         var candidate = new double[n];
 
         // Optimize the barrier function with backtracking line search.
-        while (iterations < maxIter && m / t >= Tolerance)
+        while (iterations < maxIterations && m / t >= Tolerance)
         {
             for (int inner = 0; inner < innerIter; inner++)
             {
