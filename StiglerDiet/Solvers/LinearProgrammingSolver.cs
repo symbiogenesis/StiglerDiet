@@ -159,22 +159,34 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                 iterations++;
                 bool feasible = true;
                 var grad = new double[n];
-                
+
                 // Cache residuals to avoid recomputing them
                 var residuals = new double[m];
                 for (int i = 0; i < m; i++)
                 {
                     residuals[i] = Residual(i, solution);
-                    if (residuals[i] <= 0)
+                    if (residuals[i] <= Tolerance) // Use Tolerance instead of 0 for robustness
                     {
                         feasible = false;
+                        // Potentially handle infeasibility or numerical instability more gracefully here
                         break;
                     }
-                    for (int j = 0; j < n; j++)
-                        grad[j] += -Adata[i, j] / residuals[i];
                 }
                 if (!feasible)
+                {
+                    // Consider returning a different status or logging if feasibility is lost
                     break;
+                }
+
+                // Optimized gradient calculation: compute reciprocal once per i, accumulate in local array
+                for (int i = 0; i < m; i++)
+                {
+                    double invResidual = 1.0 / residuals[i];
+                    for (int j = 0; j < n; j++)
+                    {
+                        grad[j] += -Adata[i, j] * invResidual;
+                    }
+                }
 
                 // Compute gradient norm and add contribution from the objective.
                 double norm = 0;
