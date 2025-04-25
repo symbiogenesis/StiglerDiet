@@ -3,6 +3,7 @@ namespace StiglerDiet.Solvers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using StiglerDiet.Solvers.Interfaces;
 
 /// <summary>
@@ -73,7 +74,8 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
             cVec[idx] = sign * kvp.Value;
         }
 
-        double[,] Adata = new double[m, n];
+        // Use 1D array for Adata (row-major)
+        double[] Adata = new double[m * n];
         double[] bvals = new double[m];
 
         for (int i = 0; i < baseM; i++)
@@ -82,7 +84,7 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
             foreach (var kvp in constr.Coefficients)
             {
                 int idx = varIndices[kvp.Key];
-                Adata[i, idx] = kvp.Value;
+                Adata[i * n + idx] = kvp.Value;
             }
             bvals[i] = double.IsNegativeInfinity(constr.LowerBound) ? 0.0 : constr.LowerBound;
         }
@@ -93,7 +95,7 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
             if (!double.IsPositiveInfinity(v.UpperBound))
             {
                 int varIndex = varIndices[v];
-                Adata[rowOffset, varIndex] = -1.0;
+                Adata[rowOffset * n + varIndex] = -1.0;
                 bvals[rowOffset] = -v.UpperBound;
                 rowOffset++;
             }
@@ -105,7 +107,7 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                 foreach (var kvp in c.Coefficients)
                 {
                     int idx = varIndices[kvp.Key];
-                    Adata[rowOffset, idx] = -kvp.Value;
+                    Adata[rowOffset * n + idx] = -kvp.Value;
                 }
                 bvals[rowOffset] = -c.UpperBound;
                 rowOffset++;
@@ -113,43 +115,46 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
         }
 
         int iterations = 0;
-
-        // Initialize x with 1's.
         var solution = Enumerable.Repeat(1.0, n).ToArray();
+        double t = 1.0, mu = 2.0;
+        int innerIter = 50;
 
-        // Barrier method parameters.
-        double t = 1.0;         // initial scaling parameter
-        double mu = 2.0;        // factor to increase t
-        int innerIter = 50;     // inner iterations
-
-        // Local function to compute the residual for a constraint row.
-        double Residual(int i, double[] x)
+        // Helper for residuals (vectorized)
+        void ComputeResiduals(double[] x, double[] residuals)
         {
-            double r = -bvals[i];
-            for (int j = 0; j < n; j++)
+            Array.Clear(residuals, 0, m);
+            for (int i = 0; i < m; i++)
             {
-                r += Adata[i, j] * x[j];
+                double r = -bvals[i];
+                int rowStart = i * n;
+                for (int j = 0; j < n; j++)
+                    r += Adata[rowStart + j] * x[j];
+                residuals[i] = r;
             }
-            return r;
         }
 
-        double BarrierValue(double[] xVec, double[]? precomputedResiduals = null)
+        double BarrierValue(double[] xVec, double[] residuals)
         {
             double sum = 0.0;
             for (int i = 0; i < m; i++)
             {
-                double diff = precomputedResiduals != null ? precomputedResiduals[i] : Residual(i, xVec);
-                if (diff <= 0)
-                    return double.PositiveInfinity;
+                double diff = residuals[i];
+                // Use tolerance for barrier check
+                if (diff <= Tolerance) 
+                    return double.PositiveInfinity; 
                 sum -= Math.Log(diff);
             }
             double obj = 0.0;
             for (int j = 0; j < n; j++)
                 obj += cVec[j] * xVec[j];
-            return t * obj + sum;
+            // Check for potential overflow before returning
+            double barrierObj = t * obj + sum;
+            return double.IsNaN(barrierObj) || double.IsInfinity(barrierObj) ? double.PositiveInfinity : barrierObj;
         }
 
         var candidate = new double[n];
+        var grad = new double[n];
+        var residuals = new double[m];
 
         // Optimize the barrier function with backtracking line search.
         while (iterations < maxIterations && m / t >= Tolerance)
@@ -157,38 +162,33 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
             for (int inner = 0; inner < innerIter; inner++)
             {
                 iterations++;
-                bool feasible = true;
-                var grad = new double[n];
+                ComputeResiduals(solution, residuals);
 
-                // Cache residuals to avoid recomputing them
-                var residuals = new double[m];
+                // Check feasibility using the defined tolerance
+                bool feasible = true;
                 for (int i = 0; i < m; i++)
                 {
-                    residuals[i] = Residual(i, solution);
-                    if (residuals[i] <= Tolerance) // Use Tolerance instead of 0 for robustness
+                    // Consistent check with BarrierValue logic
+                    if (residuals[i] <= Tolerance) 
                     {
                         feasible = false;
-                        // Potentially handle infeasibility or numerical instability more gracefully here
                         break;
                     }
                 }
-                if (!feasible)
-                {
-                    // Consider returning a different status or logging if feasibility is lost
-                    break;
-                }
+                // If not feasible according to tolerance, stop inner iterations for this t
+                if (!feasible) 
+                    break; 
 
-                // Optimized gradient calculation: compute reciprocal once per i, accumulate in local array
+                Array.Clear(grad, 0, n);
+
+                // Efficient gradient computation (vectorized)
                 for (int i = 0; i < m; i++)
                 {
                     double invResidual = 1.0 / residuals[i];
+                    int rowStart = i * n;
                     for (int j = 0; j < n; j++)
-                    {
-                        grad[j] += -Adata[i, j] * invResidual;
-                    }
+                        grad[j] += -Adata[rowStart + j] * invResidual;
                 }
-
-                // Compute gradient norm and add contribution from the objective.
                 double norm = 0;
                 for (int j = 0; j < n; j++)
                 {
@@ -198,15 +198,11 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                 norm = Math.Sqrt(norm);
                 if (norm < Tolerance) break;
 
-                // Backtracking line search parameters.
-                double stepSize = 1.0;
-                double alpha = 0.25;
-                double beta = 0.5;
-
-                // Compute current barrier value using the helper function.
+                double stepSize = 1.0, alpha = 0.25, beta = 0.5;
                 double currentVal = BarrierValue(solution, residuals);
+                // Handle cases where the current point is already infeasible or problematic
+                if (double.IsPositiveInfinity(currentVal)) break; 
 
-                // Determine step size that gives sufficient decrease.
                 while (true)
                 {
                     double improvement = 0.0;
@@ -217,29 +213,36 @@ public sealed class LinearProgrammingSolver(int maxIterations = 1000) : ISolver
                         improvement += grad[j] * (newVal - solution[j]);
                         candidate[j] = newVal;
                     }
-                    
-                    double candidateVal = BarrierValue(candidate);
-                    
-                    if (candidateVal <= currentVal + alpha * improvement)
+                    ComputeResiduals(candidate, residuals);
+                    double candidateVal = BarrierValue(candidate, residuals);
+
+                    // Check for valid candidate value and sufficient decrease
+                    if (!double.IsPositiveInfinity(candidateVal) && candidateVal <= currentVal + alpha * improvement)
                         break;
                     stepSize *= beta;
                     if (stepSize < MinStepSize)
-                        break; // prevent too small steps.
+                        break;
                 }
-
-                // Update solution.
                 Array.Copy(candidate, solution, n);
             }
-            t *= mu; // Increase barrier weight.
+            t *= mu;
         }
 
         _iterations = iterations;
+        // Final feasibility check before declaring optimal
+        ComputeResiduals(solution, residuals);
+        for(int i = 0; i < m; ++i) {
+            if (residuals[i] <= Tolerance) {
+                 _wallTime = Stopwatch.GetElapsedTime(startTime).TotalSeconds;
+                 // Return INFEASIBLE if final solution doesn't meet tolerance
+                 return ResultStatus.INFEASIBLE; 
+            }
+        }
 
         for (int j = 0; j < baseN; j++)
             Variables[j].Solution = Math.Abs(solution[j]) < Tolerance ? 0.0 : solution[j];
 
         _wallTime = Stopwatch.GetElapsedTime(startTime).TotalSeconds;
-
         return ResultStatus.OPTIMAL;
     }
 
