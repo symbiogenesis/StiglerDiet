@@ -8,7 +8,7 @@ This is a more fleshed out version of [Google's implementation](https://develope
 
 The following improvements have been made:
 
-- Native .NET implementation of linear optimization algorithm
+- Native .NET two-phase simplex solver, alongside the Google OR-Tools GLOP backend
 - Added unit tests
 - Uses strongly-typed objects
 - Refactored to be idempotent and segregate console logging from computation
@@ -22,6 +22,8 @@ The following improvements have been made:
 - Pretty prints the results as tables
 
 The bundled CSV files reproduce the historical data in [Google's Stigler example](https://developers.google.com/optimization/lp/stigler_diet). `Price` is the dollar price of `Quantity` in `Unit`; every nutrient coefficient is per dollar spent, not per listed package. The solver's variables therefore represent daily dollars spent. Divide spending by `Price` to obtain packages, then multiply by `Quantity` for the displayed physical amount. Custom datasets must use the same conventions.
+
+The historical optimum is $39.6617315454663 per year in 1939 dollars ($39.66 rounded). Regression tests check the achieved nutrient totals and compare the cost against an independent feasible dual certificate, which supplies a mathematical lower bound. The application also checks returned diets for feasibility. Solver arithmetic uses floating point; invalid models, exhausted iteration budgets, and unsupported numerical ranges are reported without claiming an optimum. Full test suites run in GitHub Actions on x64 and ARM64.
 
 ## Sample Output
 
@@ -90,9 +92,11 @@ Number of constraints = 9
 
 
 Advanced usage:
-Problem solved in 92 milliseconds
-Problem solved in 14 iterations
+Problem solved in 4.0852 milliseconds
+Problem solved in 80 iterations
 ```
+
+This sample uses the native solver. Timing and iteration counts depend on the backend and machine.
 
 ## License
 
