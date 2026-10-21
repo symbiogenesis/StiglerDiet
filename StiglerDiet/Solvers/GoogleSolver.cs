@@ -91,7 +91,18 @@ public sealed class GoogleSolver : ISolver
                 objective.SetMaximization();
             }
 
-            var result = solver.Solve() switch
+            var nativeResult = solver.Solve();
+            _iterations = solver.Iterations();
+            if (nativeResult == Solver.ResultStatus.INFEASIBLE)
+            {
+                // GLOP presolve also reports INFEASIBLE for an unbounded model.
+                // Resolve that ambiguity with primal simplex on the original model.
+                solver.SetSolverSpecificParametersAsString("use_preprocessing: false use_dual_simplex: false");
+                nativeResult = solver.Solve();
+                _iterations += solver.Iterations();
+            }
+
+            var result = nativeResult switch
             {
                 Solver.ResultStatus.OPTIMAL => ResultStatus.OPTIMAL,
                 Solver.ResultStatus.FEASIBLE => ResultStatus.FEASIBLE,
@@ -99,7 +110,6 @@ public sealed class GoogleSolver : ISolver
                 Solver.ResultStatus.UNBOUNDED => ResultStatus.UNBOUNDED,
                 _ => ResultStatus.ABNORMAL,
             };
-            _iterations = solver.Iterations();
 
             if (result is ResultStatus.OPTIMAL or ResultStatus.FEASIBLE)
             {

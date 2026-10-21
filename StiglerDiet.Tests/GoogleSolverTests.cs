@@ -176,6 +176,23 @@ public class GoogleSolverTests
         Assert.Equal(ResultStatus.INFEASIBLE, solver.Solve());
     }
 
+    [GoogleSolverFact]
+    public void DistinguishesUnboundedFromInfeasibleModelsAfterPresolve()
+    {
+        using var solver = new GoogleSolver();
+        var x = solver.MakeNumVar(0, double.PositiveInfinity, "x");
+        x.Solution = 7;
+        solver.Objective.SetCoefficient(x, -1);
+
+        Assert.Equal(ResultStatus.UNBOUNDED, solver.Solve());
+        Assert.Equal(0, x.SolutionValue());
+
+        var impossible = solver.MakeConstraint(double.NegativeInfinity, -1, "impossible");
+        impossible.SetCoefficient(x, 1);
+        Assert.Equal(ResultStatus.INFEASIBLE, solver.Solve());
+        Assert.Equal(0, x.SolutionValue());
+    }
+
     private static double ObjectiveValue(GoogleSolver solver) =>
         solver.Objective.Coefficients.Sum(c => c.Value * c.Key.SolutionValue());
 }
