@@ -52,7 +52,8 @@ public sealed class LinearProgrammingSolver : ISolver
         }
         finally
         {
-            _wallTime = Stopwatch.GetElapsedTime(startTime).TotalSeconds;
+            // ISolver follows OR-Tools' convention: wall time is in milliseconds.
+            _wallTime = Stopwatch.GetElapsedTime(startTime).TotalMilliseconds;
         }
     }
 
