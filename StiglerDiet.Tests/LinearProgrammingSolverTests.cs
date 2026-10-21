@@ -241,6 +241,40 @@ public class LinearProgrammingSolverTests
 
         Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
         Assert.Equal(0, solver.Iterations());
+        Assert.True(double.IsNaN(x.SolutionValue()));
+    }
+
+    [Fact]
+    public void FailedSolveClearsThePreviousSolutionAndIterationCount()
+    {
+        using var solver = new LinearProgrammingSolver();
+        var x = solver.MakeNumVar(0, 5, "x");
+        solver.Objective.SetCoefficient(x, 1);
+        solver.Objective.SetMaximization();
+        Assert.Equal(ResultStatus.OPTIMAL, solver.Solve());
+        Assert.Equal(5, x.SolutionValue(), 8);
+        Assert.True(solver.Iterations() > 0);
+
+        solver.MakeConstraint(1, 2, "impossible constant");
+
+        Assert.Equal(ResultStatus.INFEASIBLE, solver.Solve());
+        Assert.True(double.IsNaN(x.SolutionValue()));
+        Assert.Equal(0, solver.Iterations());
+    }
+
+    [Fact]
+    public void UnboundedSolveDoesNotPublishAnEarlierOptimum()
+    {
+        using var solver = new LinearProgrammingSolver();
+        var x = solver.MakeNumVar(0, double.PositiveInfinity, "x");
+        solver.Objective.SetCoefficient(x, 1);
+        Assert.Equal(ResultStatus.OPTIMAL, solver.Solve());
+        Assert.Equal(0, x.SolutionValue(), 8);
+
+        solver.Objective.SetMaximization();
+
+        Assert.Equal(ResultStatus.UNBOUNDED, solver.Solve());
+        Assert.True(double.IsNaN(x.SolutionValue()));
     }
 
     [Fact]

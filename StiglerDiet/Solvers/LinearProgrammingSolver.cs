@@ -42,6 +42,10 @@ public sealed class LinearProgrammingSolver : ISolver
     public ResultStatus Solve()
     {
         long startTime = Stopwatch.GetTimestamp();
+        _iterations = 0;
+        foreach (var variable in Variables)
+            variable.Solution = double.NaN;
+
         try
         {
             return SolveCore();
