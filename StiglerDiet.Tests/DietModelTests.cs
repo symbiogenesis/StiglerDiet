@@ -9,6 +9,22 @@ public class DietModelTests
     private static FoodItem Food => new("Test food", 3, "lb.", 2, new NutritionFacts { Calories = 10 });
 
     [Fact]
+    public void RepeatedCallsReplaceThePreviousModel()
+    {
+        using var solver = new StubSolver { Spending = 2 };
+        var first = StiglerDietProgram.FindOptimalDiet(solver, new NutritionFacts { Calories = 20 }, [Food]);
+        solver.Spending = 1;
+        var second = StiglerDietProgram.FindOptimalDiet(solver, new NutritionFacts { Calories = 10 }, [Food]);
+
+        Assert.Equal(2, Assert.Single(first).Price);
+        Assert.Equal(1, Assert.Single(second).Price);
+        Assert.Single(solver.Variables);
+        Assert.Equal(9, solver.Constraints.Count);
+        Assert.Single(solver.Objective.Coefficients);
+        Assert.Equal(10, second.NutritionFacts.Calories);
+    }
+
+    [Fact]
     public void RepeatedFoodEntriesDoNotCollideInTheModel()
     {
         using var solver = new StubSolver { Spending = 1 };

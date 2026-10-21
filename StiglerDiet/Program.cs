@@ -60,6 +60,10 @@ public class StiglerDietProgram
             ValidateNutrition(food.NutritionFacts, nameof(foodItems));
         }
 
+        // This method owns the supplied model; repeated calls replace the previous diet.
+        solver.Constraints.Clear();
+        solver.Variables.Clear();
+        solver.Objective.Coefficients.Clear();
         List<(FoodItem Food, Variable Variable)> foodVariables = [];
 
         foreach (FoodItem foodItem in foodItems)
