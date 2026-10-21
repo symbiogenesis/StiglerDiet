@@ -18,5 +18,5 @@ public static class CsvParser
         return [.. csv.GetRecords<T>()];
     }
 
-    private static string BuildFilePath(string fileName) => Path.Combine("Data", fileName);
+    private static string BuildFilePath(string fileName) => Path.Combine(AppContext.BaseDirectory, "Data", fileName);
 }
