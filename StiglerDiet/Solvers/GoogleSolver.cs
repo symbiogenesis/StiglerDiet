@@ -1,71 +1,109 @@
 namespace StiglerDiet.Solvers;
 
-using System.Collections.Generic;
+using System.Diagnostics;
 using Google.OrTools.LinearSolver;
 using StiglerDiet.Solvers.Interfaces;
-using static Google.OrTools.LinearSolver.Solver;
 
 /// <summary>
-/// Linear Programming Solver.
+/// Linear programming solver backed by Google OR-Tools GLOP.
 /// </summary>
 public sealed class GoogleSolver : ISolver
 {
-    private readonly Solver _solver = new("StiglerDietSolver", OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+    private bool _disposed;
+    private double _wallTime;
+    private long _iterations;
 
-    public List<Variable> Variables => _solver.variables().Select(v => new Variable(v.Name(), v.Lb(), v.Ub())).ToList();
-    public List<Constraint> Constraints => _solver.constraints().Select(c => new Constraint(c.Name(), c.Lb(), c.Ub())).ToList();
-    public Objective Objective
-    {
-        get
-        {
-            var objective = _solver.Objective();
-
-            Dictionary<Variable, double> coefficients = [];
-
-            foreach (var v in _solver.variables())
-            {
-                var coefficient = objective.GetCoefficient(v);
-                coefficients.Add(new(v.Name(), v.Lb(), v.Ub()), coefficient);
-            }
-
-            return new(coefficients, objective.Minimization()); 
-        }
-    }
+    public List<Variable> Variables { get; } = [];
+    public List<Constraint> Constraints { get; } = [];
+    public Objective Objective { get; } = new();
 
     public Variable MakeNumVar(double lb, double ub, string name)
     {
-        var v = _solver.MakeNumVar(lb, ub, name);
-        return new Variable(v.Name(), v.Lb(), v.Ub());
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var variable = new Variable(name, lb, ub);
+        Variables.Add(variable);
+        return variable;
     }
 
     public Constraint MakeConstraint(double lb, double ub, string name)
     {
-        var c = _solver.MakeConstraint(lb, ub, name);
-        return new Constraint(c.Name(), c.Lb(), c.Ub());
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var constraint = new Constraint(name, lb, ub);
+        Constraints.Add(constraint);
+        return constraint;
     }
 
     public ResultStatus Solve()
     {
-        var result = _solver.Solve();
-
-        return result switch
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        var started = Stopwatch.GetTimestamp();
+        _iterations = 0;
+        foreach (var variable in Variables)
         {
-            Solver.ResultStatus.OPTIMAL => ResultStatus.OPTIMAL,
-            Solver.ResultStatus.FEASIBLE => ResultStatus.FEASIBLE,
-            Solver.ResultStatus.INFEASIBLE => ResultStatus.INFEASIBLE,
-            Solver.ResultStatus.UNBOUNDED => ResultStatus.UNBOUNDED,
-            Solver.ResultStatus.ABNORMAL => ResultStatus.ABNORMAL,
-            _ => throw new InvalidDataException("Unknown result status"),
-        };
+            variable.Solution = 0;
+        }
+
+        try
+        {
+            // The public model is mutable. Rebuild it on every solve so coefficients,
+            // removed rows/columns, and objective direction cannot become stale.
+            using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
+            var nativeVariables = Variables.ToDictionary(v => v,
+                v => solver.MakeNumVar(v.LowerBound, v.UpperBound, v.Name));
+
+            foreach (var constraint in Constraints)
+            {
+                var nativeConstraint = solver.MakeConstraint(constraint.LowerBound, constraint.UpperBound, constraint.Name);
+                foreach (var (variable, coefficient) in constraint.Coefficients)
+                {
+                    nativeConstraint.SetCoefficient(nativeVariables[variable], coefficient);
+                }
+            }
+
+            var objective = solver.Objective();
+            foreach (var (variable, coefficient) in Objective.Coefficients)
+            {
+                objective.SetCoefficient(nativeVariables[variable], coefficient);
+            }
+            if (Objective.IsMinimization)
+            {
+                objective.SetMinimization();
+            }
+            else
+            {
+                objective.SetMaximization();
+            }
+
+            var result = solver.Solve() switch
+            {
+                Solver.ResultStatus.OPTIMAL => ResultStatus.OPTIMAL,
+                Solver.ResultStatus.FEASIBLE => ResultStatus.FEASIBLE,
+                Solver.ResultStatus.INFEASIBLE => ResultStatus.INFEASIBLE,
+                Solver.ResultStatus.UNBOUNDED => ResultStatus.UNBOUNDED,
+                _ => ResultStatus.ABNORMAL,
+            };
+            _iterations = solver.Iterations();
+
+            if (result is ResultStatus.OPTIMAL or ResultStatus.FEASIBLE)
+            {
+                foreach (var (variable, nativeVariable) in nativeVariables)
+                {
+                    variable.Solution = nativeVariable.SolutionValue();
+                }
+            }
+
+            return result;
+        }
+        finally
+        {
+            _wallTime = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+        }
     }
 
-    public double WallTime() => _solver.WallTime();
-    public long Iterations() => _solver.Iterations();
-    public int NumVariables() => _solver.NumVariables();
-    public int NumConstraints() => _solver.NumConstraints();
+    public double WallTime() => _wallTime;
+    public long Iterations() => _iterations;
+    public int NumVariables() => Variables.Count;
+    public int NumConstraints() => Constraints.Count;
 
-    public void Dispose()
-    {
-        _solver.Dispose();
-    }
+    public void Dispose() => _disposed = true;
 }
