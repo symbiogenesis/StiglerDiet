@@ -1,5 +1,7 @@
 # Stigler Diet
 
+Requires the .NET 10 SDK to build and run.
+
 ## Overview
 
 This is a C# implementation of the Stigler diet problem, which is a famous optimization problem in linear programming. The goal is to find the most cost-effective diet that satisfies all specified nutritional requirements, given a list of foods and their nutritional content.
