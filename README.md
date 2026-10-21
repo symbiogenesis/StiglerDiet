@@ -16,7 +16,7 @@ The following improvements have been made:
 - Standardized the 1939 data from cents to dollars
 - Converted vitamin A from thousands of international units (KIU) to international units (IU), including its daily minimum of 5,000 IU.
 - Corrected the 1939 data's erroneous use of kcals by multiplying everything by a thousand, since calories and kcals are really the same.
-- Correctly reports the quantities and units
+- Correctly reports the quantities and units, preserving No. 2 and No. 2 1/2 as can sizes rather than counts of cans.
 - Computes % of RDA
 - Shows daily totals
 - Pretty prints the results as tables

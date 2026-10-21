@@ -7,6 +7,23 @@ public class CsvWorkingDirectoryCollection;
 public class DataTests
 {
     [Theory]
+    [InlineData("Peaches (can)", "No. 2 1/2 can")]
+    [InlineData("Pears (can)", "No. 2 1/2 can")]
+    [InlineData("Pineapple (can)", "No. 2 1/2 can")]
+    [InlineData("Asparagus (can)", "No. 2 can")]
+    [InlineData("Green Beans (can)", "No. 2 can")]
+    [InlineData("Corn (can)", "No. 2 can")]
+    [InlineData("Peas (can)", "No. 2 can")]
+    [InlineData("Tomatoes (can)", "No. 2 can")]
+    public void CanSizeDoesNotMultiplyTheNumberOfCans(string name, string expectedUnit)
+    {
+        var food = Assert.Single(CsvParser.LoadFoodItems(), food => food.Name == name);
+
+        Assert.Equal(1, food.Quantity);
+        Assert.Equal(expectedUnit, food.Unit);
+    }
+
+    [Theory]
     [InlineData("Corn Meal", 30900)]
     [InlineData("Liver (Beef)", 169200)]
     [InlineData("Spinach", 918400)]
