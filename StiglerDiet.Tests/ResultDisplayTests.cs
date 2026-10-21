@@ -23,6 +23,21 @@ public class ResultDisplayTests
         Assert.DoesNotContain(double.PositiveInfinity.ToString("N2"), output);
     }
 
+    [Fact]
+    public void AnnualQuantityConvertsPackagesBeforeScalingThePeriod()
+    {
+        using var solver = new LinearProgrammingSolver();
+        var diet = new OptimalDailyDiet(ResultStatus.OPTIMAL)
+        {
+            new(new FoodItem("Small package", 1e-308, "lb.", 1e-308, new NutritionFacts()), 1, 1e308)
+        };
+
+        string output = Capture(() => StiglerDietProgram.LogResults(solver, diet, new NutritionFacts()));
+
+        Assert.Contains($"{365:N2} (lb.)", output);
+        Assert.DoesNotContain(double.PositiveInfinity.ToString("N2"), output);
+    }
+
     private static string Capture(Action action)
     {
         TextWriter previous = Console.Out;

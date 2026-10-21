@@ -227,7 +227,7 @@ public class StiglerDietProgram
         foreach (var (foodItem, dailyPrice, dailyQuantity) in dailyFoodPrices)
         {
             double annualPrice = (int)period * dailyPrice;
-            double annualQuantity = (int)period * dailyQuantity * foodItem.Quantity;
+            double annualQuantity = dailyQuantity * foodItem.Quantity * (int)period;
             foodTable.AddRow(foodItem.Name, $"{annualQuantity:N2} ({foodItem.Unit})", annualPrice.ToString("C2"));
             totalCost += annualPrice;
         }
