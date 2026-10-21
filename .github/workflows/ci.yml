@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, windows-11-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+      - name: Build with analyzers
+        run: dotnet build StiglerDiet.sln --configuration Release -warnaserror
+      - name: Run full test suite
+        run: dotnet test StiglerDiet.Tests/StiglerDiet.Tests.csproj --configuration Release --no-build --no-restore
+      - name: Run the application from the repository root
+        run: dotnet run --project StiglerDiet --configuration Release --no-build --no-restore
