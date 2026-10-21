@@ -50,6 +50,30 @@ public class DietModelTests
         Assert.Equal(10, solver.Constraints.Single(c => c.Name == "Calories").Coefficients[solver.Variables[0]]);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void DoesNotPublishAnInvalidSolutionEvenWhenSolverClaimsOptimal(double spending)
+    {
+        using var solver = new StubSolver { Spending = spending };
+        var result = StiglerDietProgram.FindOptimalDiet(solver, new NutritionFacts { Calories = 20 }, [Food]);
+
+        Assert.Equal(ResultStatus.ABNORMAL, result.ResultStatus);
+        Assert.Empty(result);
+        Assert.Equal(0, result.NutritionFacts.Calories);
+    }
+
+    [Fact]
+    public void DoesNotPublishOverflowedNutritionOrQuantities()
+    {
+        using var solver = new StubSolver { Spending = double.MaxValue };
+        var result = StiglerDietProgram.FindOptimalDiet(solver, new NutritionFacts(), [Food]);
+        Assert.Equal(ResultStatus.ABNORMAL, result.ResultStatus);
+        Assert.Empty(result);
+    }
+
     private sealed class StubSolver : ISolver
     {
         public double Spending { get; set; }

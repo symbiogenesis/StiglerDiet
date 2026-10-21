@@ -97,7 +97,7 @@ public class StiglerDietProgram
 
         var resultStatus = solver.Solve();
 
-        return BuildDailyDietResult(resultStatus, foodVariables);
+        return BuildDailyDietResult(resultStatus, foodVariables, minimumDailyAllowance);
     }
 
     private static void ValidateNutrition(NutritionFacts nutrition, string parameterName)
@@ -148,19 +148,30 @@ public class StiglerDietProgram
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
-    private static OptimalDailyDiet BuildDailyDietResult(ResultStatus resultStatus, List<(FoodItem Food, Variable Variable)> foodVariables)
+    private static OptimalDailyDiet BuildDailyDietResult(ResultStatus resultStatus,
+        List<(FoodItem Food, Variable Variable)> foodVariables, NutritionFacts minimumDailyAllowance)
     {
         OptimalDailyDiet optimalDailyDiet = new(resultStatus);
 
         if (resultStatus is ResultStatus.OPTIMAL or ResultStatus.FEASIBLE)
         {
+            double totalDailyPrice = 0;
             // Process results
             foreach (var (foodItem, variable) in foodVariables)
             {
                 double dailyPrice = variable.SolutionValue();
+                totalDailyPrice += dailyPrice;
+                if (!double.IsFinite(totalDailyPrice) || dailyPrice < 0)
+                {
+                    return new OptimalDailyDiet(ResultStatus.ABNORMAL);
+                }
                 if (dailyPrice > 0.0)
                 {
                     var dailyQuantity = dailyPrice / foodItem.Price;
+                    if (!double.IsFinite(dailyQuantity * foodItem.Quantity))
+                    {
+                        return new OptimalDailyDiet(ResultStatus.ABNORMAL);
+                    }
 
                     for (int j = 0; j < NutritionFacts.Properties.Length; ++j)
                     {
@@ -170,6 +181,17 @@ public class StiglerDietProgram
                     OptimalDailyDietItem optimalDailyDietItem = (foodItem, dailyPrice, dailyQuantity);
 
                     optimalDailyDiet.Add(optimalDailyDietItem);
+                }
+            }
+
+            // Verify the returned diet itself rather than trusting a solver status alone.
+            for (int i = 0; i < NutritionFacts.Properties.Length; i++)
+            {
+                double actual = optimalDailyDiet.NutritionFacts[i];
+                double minimum = minimumDailyAllowance[i];
+                if (!double.IsFinite(actual) || actual < minimum - 1e-7 * Math.Max(1.0, minimum))
+                {
+                    return new OptimalDailyDiet(ResultStatus.ABNORMAL);
                 }
             }
         }
