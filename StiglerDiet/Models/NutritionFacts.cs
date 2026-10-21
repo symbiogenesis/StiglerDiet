@@ -8,7 +8,7 @@ public class NutritionFacts
 {
     public static PropertyInfo[] Properties { get; } = typeof(NutritionFacts).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
-    [Description("Calories")]
+    [Description("Energy (kcal)")]
     public double Calories { get; init; }
 
     [Description("Protein (g)")]

@@ -15,11 +15,13 @@ The following improvements have been made:
 - Enabled easily swapping in your own dataset
 - Standardized the 1939 data from cents to dollars
 - Converted vitamin A from thousands of international units (KIU) to international units (IU), including its daily minimum of 5,000 IU.
-- Corrected the 1939 data's erroneous use of kcals by multiplying everything by a thousand, since calories and kcals are really the same.
+- Expresses energy in kcal (dietary Calories). Google's energy values are in thousands of kcal despite their `kcal` label: its minimum of 3 means 3,000 kcal, and wheat flour's 44.7 means 44,700 kcal per dollar. Both energy coefficients and the minimum are multiplied by 1,000 here.
 - Correctly reports the quantities and units, preserving No. 2 and No. 2 1/2 as can sizes rather than counts of cans.
 - Computes % of RDA
 - Shows daily totals
 - Pretty prints the results as tables
+
+The bundled CSV files reproduce the historical data in [Google's Stigler example](https://developers.google.com/optimization/lp/stigler_diet). `Price` is the dollar price of `Quantity` in `Unit`; every nutrient coefficient is per dollar spent, not per listed package. The solver's variables therefore represent daily dollars spent. Divide spending by `Price` to obtain packages, then multiply by `Quantity` for the displayed physical amount. Custom datasets must use the same conventions.
 
 ## Sample Output
 
@@ -67,7 +69,7 @@ Number of constraints = 9
  -----------------------------------------
  | Nutrient        | Amount   | % of RDA |
  -----------------------------------------
- | Calories        | 3,000.00 | 100.00%  |
+ | Energy (kcal)   | 3,000.00 | 100.00%  |
  -----------------------------------------
  | Protein (g)     | 147.41   | 210.59%  |
  -----------------------------------------
