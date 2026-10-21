@@ -149,7 +149,12 @@ public sealed class LinearProgrammingSolver : ISolver
         }
         if (objectiveScale > 0.0)
             for (int i = 0; i < objective.Length; i++)
-                objective[i] /= objectiveScale;
+            {
+                double scaled = objective[i] / objectiveScale;
+                if (objective[i] != 0.0 && scaled == 0.0)
+                    return ResultStatus.ABNORMAL;
+                objective[i] = scaled;
+            }
 
         var tableau = new SimplexTableau(rows, columnCount);
         var result = tableau.Solve(objective, _maxIterations, out double[] values, out _iterations);
@@ -196,9 +201,13 @@ public sealed class LinearProgrammingSolver : ISolver
 
         var row = new double[coefficients.Length + 1];
         for (int j = 0; j < coefficients.Length; j++)
+        {
             row[j] = sign * coefficients[j] / scale;
+            if (coefficients[j] != 0.0 && row[j] == 0.0)
+                return ResultStatus.ABNORMAL;
+        }
         row[coefficients.Length] = bound / scale;
-        if (!double.IsFinite(row[coefficients.Length]))
+        if (!double.IsFinite(row[coefficients.Length]) || (bound != 0.0 && row[coefficients.Length] == 0.0))
             return ResultStatus.ABNORMAL;
         rows.Add(row);
         return ResultStatus.OPTIMAL;

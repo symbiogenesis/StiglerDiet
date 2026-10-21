@@ -278,6 +278,40 @@ public class LinearProgrammingSolverTests
     }
 
     [Fact]
+    public void ObjectiveNormalizationCannotDiscardAnImprovingDirection()
+    {
+        using var solver = new LinearProgrammingSolver();
+        var x = solver.MakeNumVar(0, 0, "fixed x");
+        var y = solver.MakeNumVar(0, 1e308, "y");
+        solver.Objective.SetCoefficient(x, 1e308);
+        solver.Objective.SetCoefficient(y, 1e-308);
+        solver.Objective.SetMaximization();
+
+        // The mathematical optimum is y=1e308, with objective value 1.
+        // This coefficient range cannot be normalized faithfully in double.
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+        Assert.True(double.IsNaN(y.SolutionValue()));
+    }
+
+    [Theory]
+    [InlineData(1e-308, 1.0)]
+    [InlineData(1.0, 1e-308)]
+    public void RowNormalizationCannotSilentlyUnderflow(double smallCoefficient, double bound)
+    {
+        using var solver = new LinearProgrammingSolver();
+        var x = solver.MakeNumVar(0, double.PositiveInfinity, "x");
+        var y = solver.MakeNumVar(0, 0, "fixed y");
+        var row = solver.MakeConstraint(double.NegativeInfinity, bound, "extreme coefficient range");
+        row.SetCoefficient(x, smallCoefficient);
+        row.SetCoefficient(y, 1e308);
+        solver.Objective.SetCoefficient(x, 1);
+        solver.Objective.SetMaximization();
+
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+        Assert.True(double.IsNaN(x.SolutionValue()));
+    }
+
+    [Fact]
     public void NonFiniteCoefficientsAreRejected()
     {
         using var solver = new LinearProgrammingSolver();
