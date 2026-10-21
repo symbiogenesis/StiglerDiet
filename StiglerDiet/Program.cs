@@ -60,12 +60,12 @@ public class StiglerDietProgram
             ValidateNutrition(food.NutritionFacts, nameof(foodItems));
         }
 
-        Dictionary<FoodItem, Variable> foodVariables = [];
+        List<(FoodItem Food, Variable Variable)> foodVariables = [];
 
         foreach (FoodItem foodItem in foodItems)
         {
-            var variable = solver.MakeNumVar(0.0, double.PositiveInfinity, foodItem.Name);
-            foodVariables.Add(foodItem, variable);
+            var variable = solver.MakeNumVar(0.0, double.PositiveInfinity, $"{foodItem.Name} [{foodVariables.Count}]");
+            foodVariables.Add((foodItem, variable));
         }
 
         // Add nutrient constraints
@@ -75,9 +75,9 @@ public class StiglerDietProgram
 
             var constraint = solver.MakeConstraint(lowerBound, double.PositiveInfinity, NutritionFacts.Properties[i].Name);
 
-            foreach (var foodItem in foodItems)
+            foreach (var (foodItem, variable) in foodVariables)
             {
-                constraint.SetCoefficient(foodVariables[foodItem], foodItem.NutritionFacts[i]);
+                constraint.SetCoefficient(variable, foodItem.NutritionFacts[i]);
             }
         }
 
@@ -144,7 +144,7 @@ public class StiglerDietProgram
         Console.WriteLine($"Problem solved in {solver.Iterations()} iterations");
     }
 
-    private static OptimalDailyDiet BuildDailyDietResult(ResultStatus resultStatus, Dictionary<FoodItem, Variable> foodVariables)
+    private static OptimalDailyDiet BuildDailyDietResult(ResultStatus resultStatus, List<(FoodItem Food, Variable Variable)> foodVariables)
     {
         OptimalDailyDiet optimalDailyDiet = new(resultStatus);
 
