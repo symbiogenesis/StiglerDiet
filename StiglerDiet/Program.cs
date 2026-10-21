@@ -45,6 +45,21 @@ public class StiglerDietProgram
 
     public static OptimalDailyDiet FindOptimalDiet(ISolver solver, NutritionFacts minimumDailyAllowance, List<FoodItem> foodItems)
     {
+        ArgumentNullException.ThrowIfNull(solver);
+        ArgumentNullException.ThrowIfNull(minimumDailyAllowance);
+        ArgumentNullException.ThrowIfNull(foodItems);
+
+        ValidateNutrition(minimumDailyAllowance, nameof(minimumDailyAllowance));
+        foreach (var food in foodItems)
+        {
+            if (!double.IsFinite(food.Price) || food.Price <= 0 ||
+                !double.IsFinite(food.Quantity) || food.Quantity <= 0 || food.NutritionFacts is null)
+            {
+                throw new ArgumentException("Each food must have a finite, positive price and quantity and nutrition facts.", nameof(foodItems));
+            }
+            ValidateNutrition(food.NutritionFacts, nameof(foodItems));
+        }
+
         Dictionary<FoodItem, Variable> foodVariables = [];
 
         foreach (FoodItem foodItem in foodItems)
@@ -79,6 +94,17 @@ public class StiglerDietProgram
         var resultStatus = solver.Solve();
 
         return BuildDailyDietResult(resultStatus, foodVariables);
+    }
+
+    private static void ValidateNutrition(NutritionFacts nutrition, string parameterName)
+    {
+        for (int i = 0; i < NutritionFacts.Properties.Length; i++)
+        {
+            if (!double.IsFinite(nutrition[i]) || nutrition[i] < 0)
+            {
+                throw new ArgumentException("Nutrient values must be finite and nonnegative.", parameterName);
+            }
+        }
     }
 
     public static void LogResults(ISolver solver, OptimalDailyDiet optimalDailyDiet, NutritionFacts minimumDailyAllowance)
