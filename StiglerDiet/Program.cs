@@ -209,8 +209,10 @@ public class StiglerDietProgram
             var propertyInfo = NutritionFacts.Properties[i];
             var name = GetNutrientName(propertyInfo);
             var amount = dailyNutritionFacts[i].ToString("N2");
-            var percentage = dailyNutritionFacts[i] / minimumDailyAllowance[i] * 100;
-            nutrientsTable.AddRow(name, amount, $"{percentage:N2}%");
+            var percentage = minimumDailyAllowance[i] > 0
+                ? $"{dailyNutritionFacts[i] / minimumDailyAllowance[i] * 100:N2}%"
+                : "N/A";
+            nutrientsTable.AddRow(name, amount, percentage);
         }
 
         nutrientsTable.Write();
