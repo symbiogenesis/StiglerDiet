@@ -45,6 +45,23 @@ public sealed class GoogleSolver : ISolver
 
         try
         {
+            var variables = Variables.ToHashSet();
+            if (variables.Count != Variables.Count ||
+                Variables.Any(v => double.IsNaN(v.LowerBound) || double.IsNaN(v.UpperBound)) ||
+                Constraints.Any(c => double.IsNaN(c.LowerBound) || double.IsNaN(c.UpperBound)) ||
+                Objective.Coefficients.Any(c => !variables.Contains(c.Key) || !double.IsFinite(c.Value)) ||
+                Constraints.Any(c => c.Coefficients.Any(coefficient =>
+                    !variables.Contains(coefficient.Key) || !double.IsFinite(coefficient.Value))))
+            {
+                return ResultStatus.ABNORMAL;
+            }
+
+            if (Variables.Any(v => InvalidBounds(v.LowerBound, v.UpperBound)) ||
+                Constraints.Any(c => InvalidBounds(c.LowerBound, c.UpperBound)))
+            {
+                return ResultStatus.INFEASIBLE;
+            }
+
             // The public model is mutable. Rebuild it on every solve so coefficients,
             // removed rows/columns, and objective direction cannot become stale.
             using var solver = new Solver("StiglerDietSolver", Solver.OptimizationProblemType.GLOP_LINEAR_PROGRAMMING);
@@ -99,6 +116,9 @@ public sealed class GoogleSolver : ISolver
             _wallTime = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
         }
     }
+
+    private static bool InvalidBounds(double lowerBound, double upperBound) =>
+        lowerBound > upperBound || double.IsPositiveInfinity(lowerBound) || double.IsNegativeInfinity(upperBound);
 
     public double WallTime() => _wallTime;
     public long Iterations() => _iterations;

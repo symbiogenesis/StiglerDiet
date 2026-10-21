@@ -124,6 +124,58 @@ public class GoogleSolverTests
         }
     }
 
+    [GoogleSolverFact]
+    public void RejectsInvalidCoefficientsAndForeignVariablesWithoutPublishingASolution()
+    {
+        using var solver = new GoogleSolver();
+        var x = solver.MakeNumVar(0, 10, "x");
+        x.Solution = 7;
+        solver.Objective.SetCoefficient(x, double.NaN);
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+        Assert.Equal(0, x.SolutionValue());
+
+        solver.Objective.SetCoefficient(x, double.PositiveInfinity);
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+
+        solver.Objective.Coefficients.Clear();
+        var row = solver.MakeConstraint(0, 1, "row");
+        row.SetCoefficient(new Variable("foreign", 0, 1), 1);
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+
+        row.Coefficients.Clear();
+        row.SetCoefficient(x, double.NegativeInfinity);
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+    }
+
+    [GoogleSolverFact]
+    public void RejectsDuplicateVariablesAndNaNBounds()
+    {
+        using var solver = new GoogleSolver();
+        var x = solver.MakeNumVar(0, 1, "x");
+        solver.Variables.Add(x);
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+
+        solver.Variables.Clear();
+        solver.MakeNumVar(double.NaN, 1, "bad lower bound");
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+
+        solver.Variables.Clear();
+        solver.MakeConstraint(0, double.NaN, "bad upper bound");
+        Assert.Equal(ResultStatus.ABNORMAL, solver.Solve());
+    }
+
+    [GoogleSolverFact]
+    public void ReportsContradictoryBoundsAsInfeasible()
+    {
+        using var solver = new GoogleSolver();
+        solver.MakeNumVar(2, 1, "impossible variable");
+        Assert.Equal(ResultStatus.INFEASIBLE, solver.Solve());
+
+        solver.Variables.Clear();
+        solver.MakeConstraint(1, 0, "impossible row");
+        Assert.Equal(ResultStatus.INFEASIBLE, solver.Solve());
+    }
+
     private static double ObjectiveValue(GoogleSolver solver) =>
         solver.Objective.Coefficients.Sum(c => c.Value * c.Key.SolutionValue());
 }
