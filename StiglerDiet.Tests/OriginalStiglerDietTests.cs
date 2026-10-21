@@ -77,7 +77,8 @@ public class OriginalStiglerDietTests
 
         // Assert
         Assert.NotNull(totalDailyCost);
-        Assert.Equal(39.67, double.Round(totalDailyCost.Value * 365, 2));
+        Assert.Equal(ResultStatus.OPTIMAL, optimalDailyDiet!.ResultStatus);
+        Assert.Equal(39.6617315454663, totalDailyCost.Value * 365, 8);
     }
 
     [Fact]
@@ -96,11 +97,11 @@ public class OriginalStiglerDietTests
     }
 
     [Theory]
-    [InlineData("Calories", 3.0)]
+    [InlineData("Calories", 3000)]
     [InlineData("Protein", 70)]
     [InlineData("Calcium", 0.8)]
     [InlineData("Iron", 12)]
-    [InlineData("VitaminA", 5.0)]
+    [InlineData("VitaminA", 5000)]
     [InlineData("VitaminB1", 1.8)]
     [InlineData("VitaminB2", 2.7)]
     [InlineData("Niacin", 18)]
@@ -111,11 +112,16 @@ public class OriginalStiglerDietTests
         using var solver = CreateSolver();
 
         // Act
-        StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
-        var constraint = solver.Constraints.First(c => c.Name.StartsWith(nutrientName));
+        var diet = StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
+        var property = typeof(NutritionFacts).GetProperty(nutrientName)!;
+        double actual = (double)property.GetValue(diet.NutritionFacts)!;
+        double recomputed = diet.Sum(item => (double)property.GetValue(item.Food.NutritionFacts)! * item.Price);
 
         // Assert
-        Assert.True(constraint.LowerBound >= minimum, $"{nutrientName} value of {constraint.LowerBound} does not meet the minimum requirement of {minimum}.");
+        Assert.Equal(ResultStatus.OPTIMAL, diet.ResultStatus);
+        Assert.Equal(recomputed, actual, 8);
+        Assert.True(actual >= minimum - 1e-7 * Math.Max(1, minimum),
+            $"{nutrientName} value of {actual} does not meet the minimum requirement of {minimum}.");
     }
 
     [Fact]
@@ -139,7 +145,7 @@ public class OriginalStiglerDietTests
 
         // Act
         StiglerDietProgram.FindOptimalDiet(solver, minimumDailyAllowance, foodItems);
-        var objectiveValue = solver.Objective.Coefficients.Sum(x => x.Value);
+        var objectiveValue = solver.Objective.Coefficients.Sum(x => x.Value * x.Key.SolutionValue());
 
         // Assert
         Assert.True(objectiveValue > 0, "Objective value should be positive.");
