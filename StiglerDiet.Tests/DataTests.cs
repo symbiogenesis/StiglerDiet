@@ -6,6 +6,18 @@ public class CsvWorkingDirectoryCollection;
 [Collection("CSV working directory")]
 public class DataTests
 {
+    [Theory]
+    [InlineData("Corn Meal", 30900)]
+    [InlineData("Liver (Beef)", 169200)]
+    [InlineData("Spinach", 918400)]
+    public void VitaminAUsesInternationalUnits(string name, double expectedVitaminA)
+    {
+        var food = Assert.Single(CsvParser.LoadFoodItems(), food => food.Name == name);
+
+        Assert.Equal(expectedVitaminA, food.NutritionFacts.VitaminA);
+        Assert.Equal(5000, CsvParser.LoadMinimumDailyAllowance().VitaminA);
+    }
+
     [Fact]
     public void CannedGreenBeanEnergyMatchesTheSourceTable()
     {

@@ -14,6 +14,7 @@ The following improvements have been made:
 - Refactored to be idempotent and segregate console logging from computation
 - Enabled easily swapping in your own dataset
 - Standardized the 1939 data from cents to dollars
+- Converted vitamin A from thousands of international units (KIU) to international units (IU), including its daily minimum of 5,000 IU.
 - Corrected the 1939 data's erroneous use of kcals by multiplying everything by a thousand, since calories and kcals are really the same.
 - Correctly reports the quantities and units
 - Computes % of RDA
@@ -74,7 +75,7 @@ Number of constraints = 9
  -----------------------------------------
  | Iron (mg)       | 60.47    | 503.89%  |
  -----------------------------------------
- | Vitamin A (IU)  | 5.00     | 100.00%  |
+ | Vitamin A (IU)  | 5,000.00 | 100.00%  |
  -----------------------------------------
  | Vitamin B1 (mg) | 4.12     | 228.91%  |
  -----------------------------------------
