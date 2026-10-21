@@ -3,8 +3,10 @@
 using StiglerDiet.Models;
 using StiglerDiet.Solvers;
 
-public class OriginalStiglerDietTests
+[Collection("Console output")]
+public class OriginalStiglerDietTests : IDisposable
 {
+    private readonly TextWriter originalOutput = Console.Out;
     private readonly NutritionFacts minimumDailyAllowance;
     private readonly List<FoodItem> foodItems;
 
@@ -13,6 +15,8 @@ public class OriginalStiglerDietTests
         minimumDailyAllowance = CsvParser.LoadMinimumDailyAllowance();
         foodItems = CsvParser.LoadFoodItems();
     }
+
+    public void Dispose() => Console.SetOut(originalOutput);
 
     private static LinearProgrammingSolver CreateSolver() => new();
 
@@ -284,3 +288,6 @@ public class OriginalStiglerDietTests
         Assert.Contains($"{period} Price", output);
     }
 }
+
+[CollectionDefinition("Console output", DisableParallelization = true)]
+public class ConsoleOutputCollection;
