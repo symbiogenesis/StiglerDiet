@@ -8,24 +8,25 @@ This is a C# implementation of the Stigler diet problem, which is a famous optim
 
 This is a more fleshed out version of [Google's implementation](https://developers.google.com/optimization/lp/stigler_diet)
 
-The following improvements have been made:
+Key features:
 
-- Native .NET two-phase simplex solver, alongside the Google OR-Tools GLOP backend
-- Added unit tests
-- Uses strongly-typed objects
-- Refactored to be idempotent and segregate console logging from computation
-- Enabled easily swapping in your own dataset
-- Standardized the 1939 data from cents to dollars
-- Converted vitamin A from thousands of international units (KIU) to international units (IU), including its daily minimum of 5,000 IU.
-- Expresses energy in kcal (dietary Calories). Google's energy values are in thousands of kcal despite their `kcal` label: its minimum of 3 means 3,000 kcal, and wheat flour's 44.7 means 44,700 kcal per dollar. Both energy coefficients and the minimum are multiplied by 1,000 here.
-- Correctly reports the quantities and units, preserving No. 2 and No. 2 1/2 as can sizes rather than counts of cans.
+- Native .NET solver with an optional Google OR-Tools backend
+- Includes unit tests
+- Uses strongly typed objects
+- Keeps computation idempotent and separate from console logging
+- Easily replaceable CSV datasets
+- Standardizes historical prices from cents to dollars
+- Expresses energy in kcal and vitamin A in IU
+- Correctly reports food quantities and units
 - Computes % of RDA
-- Shows daily totals
-- Pretty prints the results as tables
+- Shows daily and annual totals
+- Prints results as readable tables
+
+## Data conventions
 
 The bundled CSV files reproduce the historical data in [Google's Stigler example](https://developers.google.com/optimization/lp/stigler_diet). `Price` is the dollar price of `Quantity` in `Unit`; every nutrient coefficient is per dollar spent, not per listed package. The solver's variables therefore represent daily dollars spent. Divide spending by `Price` to obtain packages, then multiply by `Quantity` for the displayed physical amount. Custom datasets must use the same conventions.
 
-The historical optimum is $39.6617315454663 per year in 1939 dollars ($39.66 rounded). Regression tests check the achieved nutrient totals and compare the cost against an independent feasible dual certificate, which supplies a mathematical lower bound. The application also checks returned diets for feasibility. Solver arithmetic uses floating point; invalid models, exhausted iteration budgets, and unsupported numerical ranges are reported without claiming an optimum. Full test suites run in GitHub Actions on x64 and ARM64.
+Prices are in 1939 dollars, energy is in kcal, and vitamin A is in IU. Historical can sizes such as No. 2 and No. 2 1/2 are preserved as package units. The historical minimum-cost diet is about $39.66 per year.
 
 ## Sample Output
 
